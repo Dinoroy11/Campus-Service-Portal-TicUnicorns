@@ -1,0 +1,52 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Test results
+TestResults/
+*.trx
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local application settings
+appsettings.Local.json
+
+# User secrets
+secrets.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database local files
+*.mdf
+*.ldf
+
+# Node / Angular
+node_modules/
+dist/
+.angular/

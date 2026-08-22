@@ -1,0 +1,6 @@
+@CampusServicePortal_TicUnicorns_HostAddress = http://localhost:5078
+
+GET {{CampusServicePortal_TicUnicorns_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
