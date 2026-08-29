@@ -20,7 +20,6 @@
     <Folder Include="Modules\Events\" />
     <Folder Include="Modules\Fees\" />
     <Folder Include="Modules\Certificates\" />
-    <Folder Include="Modules\Complaints\" />
     <Folder Include="Modules\DashBoards\" />
     <Folder Include="Modules\Canteens\" />
     <Folder Include="Modules\Laundry\" />
