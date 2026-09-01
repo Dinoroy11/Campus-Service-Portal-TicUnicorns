@@ -22,7 +22,6 @@
     <Folder Include="Modules\Certificates\" />
     <Folder Include="Modules\DashBoards\" />
     <Folder Include="Modules\Canteens\" />
-    <Folder Include="Modules\Laundry\" />
     <Folder Include="Modules\Gym\" />
     <Folder Include="Modules\Leave\" />
     <Folder Include="Modules\AuditLogs\" />
