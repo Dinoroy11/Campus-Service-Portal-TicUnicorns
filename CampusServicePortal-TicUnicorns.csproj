@@ -22,7 +22,6 @@
     <Folder Include="Modules\DashBoards\" />
     <Folder Include="Modules\Canteens\" />
     <Folder Include="Modules\Gym\" />
-    <Folder Include="Modules\Leave\" />
     <Folder Include="Modules\AuditLogs\" />
     <Folder Include="Modules\Sports\" />
     <Folder Include="Modules\SystemSettings\" />
