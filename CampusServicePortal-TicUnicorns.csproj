@@ -8,22 +8,41 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+    <Compile Remove="Modules\Canteens\**" />
+    <Content Remove="Modules\Canteens\**" />
+    <EmbeddedResource Remove="Modules\Canteens\**" />
+    <None Remove="Modules\Canteens\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.20" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.20" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.20">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+<ItemGroup>
     <Folder Include="Common\" />
     <Folder Include="Data\" />
     <Folder Include="Modules\Identity\" />
-    <Folder Include="Modules\Hostels\" />
     <Folder Include="Modules\Labs\" />
     <Folder Include="Modules\Events\" />
     <Folder Include="Modules\Fees\" />
     <Folder Include="Modules\Certificates\" />
     <Folder Include="Modules\Complaints\" />
     <Folder Include="Modules\DashBoards\" />
+<<<<<<< Updated upstream
     <Folder Include="Modules\Canteens\" />
     <Folder Include="Modules\Laundry\" />
+=======
+    <Folder Include="Modules\Laundry\" />
+    <Folder Include="Modules\Canteens\" />
+>>>>>>> Stashed changes
     <Folder Include="Modules\Gym\" />
     <Folder Include="Modules\Leave\" />
     <Folder Include="Modules\AuditLogs\" />
@@ -32,5 +51,4 @@
     <Folder Include="Modules\Notifications\" />
     <Folder Include="Modules\Students\" />
   </ItemGroup>
-
 </Project>
