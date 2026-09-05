@@ -1,11 +1,7 @@
-﻿using CampusServicePortal.Modules.Gym.Entities;
-using CampusServicePortal.Modules.Hostels.Entities;
-using CampusServicePortal.Modules.Identity.Entities;
-using CampusServicePortal.Modules.Notifications.Entities;
-using CampusServicePortal.Modules.SystemSettings.Entities;
+﻿using CampusServicePortal.Modules.Hostels.Entities;
+using CampusServicePortal_TicUnicorns.Modules.AuditLogs.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
-using CampusServicePortal_TicUnicorns.Modules.Certificates.Enums;
 using CampusServicePortal_TicUnicorns.Modules.Complaints.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Events.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Fees.Entities;
@@ -14,9 +10,6 @@ using CampusServicePortal_TicUnicorns.Modules.Hostels.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Identity.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Labs.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
-using CampusServicePortal_TicUnicorns.Modules.Laundry.Services;
-using Microsoft.EntityFrameworkCore;
-
 using CampusServicePortal_TicUnicorns.Modules.Leave.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Notifications.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
@@ -25,8 +18,8 @@ using CampusServicePortal_TicUnicorns.Modules.SystemSettings.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Reflection.Emit;
+using System.Data;
+using System.Security;
 using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 
@@ -38,6 +31,7 @@ public class CampusDbContext : DbContext
         : base(options)
     {
     }
+
     // =========================================================
     // Identity & Access
     // =========================================================
@@ -60,15 +54,17 @@ public class CampusDbContext : DbContext
     public DbSet<University> Universities { get; set; }
     public DbSet<Faculty> Faculties { get; set; }
     public DbSet<Department> Departments { get; set; }
+
     public DbSet<Hostel> Hostels { get; set; }
     public DbSet<Floor> Floors { get; set; }
     public DbSet<Room> Rooms { get; set; }
     public DbSet<RoomBed> RoomBeds { get; set; }
+
     public DbSet<Canteen> Canteens { get; set; }
 
 
     // =========================================================
-    // Student
+    // Students
     // =========================================================
 
     public DbSet<StudentMasterList> StudentMasterLists { get; set; }
@@ -79,7 +75,7 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Hostel
+    // Hostels
     // =========================================================
 
     public DbSet<HostelApplication> HostelApplications { get; set; }
@@ -88,7 +84,7 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Lab
+    // Labs
     // =========================================================
 
     public DbSet<Lab> Labs { get; set; }
@@ -98,7 +94,7 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Event
+    // Events
     // =========================================================
 
     public DbSet<Venue> Venues { get; set; }
@@ -119,7 +115,7 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Certificate
+    // Certificates
     // =========================================================
 
     public DbSet<CertificateType> CertificateTypes { get; set; }
@@ -128,7 +124,7 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Complaint
+    // Complaints
     // =========================================================
 
     public DbSet<ComplaintCategory> ComplaintCategories { get; set; }
@@ -184,10 +180,16 @@ public class CampusDbContext : DbContext
 
 
     // =========================================================
-    // Shared
+    // Notifications
     // =========================================================
 
     public DbSet<Notification> Notifications { get; set; }
+
+
+    // =========================================================
+    // System Settings
+    // =========================================================
+
     public DbSet<SystemSetting> SystemSettings { get; set; }
 
 
