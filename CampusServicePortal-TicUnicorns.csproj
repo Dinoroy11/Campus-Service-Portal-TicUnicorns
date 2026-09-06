@@ -25,7 +25,7 @@
 		<Folder Include="Common\" />
 		<Folder Include="Data\" />
 		<Folder Include="Modules\Identity\" />
-		<Folder Include="Modules\Hostels\" />
+        <Folder Include="Modules\Hostels\" />
 		<Folder Include="Modules\Labs\" />
 		<Folder Include="Modules\Fees\" />
 		<Folder Include="Modules\Certificates\" />
