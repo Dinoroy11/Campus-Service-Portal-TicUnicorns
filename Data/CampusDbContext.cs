@@ -1,6 +1,11 @@
-﻿namespace CampusServicePortal_TicUnicorns.Data
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace CampusServicePortal_TicUnicorns.Data;
+
+public class CampusDbContext : DbContext
 {
-    public class CampusDbContext
+    public CampusDbContext(DbContextOptions<CampusDbContext> options)
+        : base(options)
     {
     }
 }
