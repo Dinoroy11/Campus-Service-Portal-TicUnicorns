@@ -1,125 +1,168 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Complaints.DTOs;
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Interfaces.Service;
+﻿using CampusServicePortal.Modules.Complaints.DTOs;
+using CampusServicePortal.Modules.Complaints.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Complaints.Controllers
+namespace CampusServicePortal.Modules.Complaints.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ComplaintsController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ComplaintsController : ControllerBase
+    private readonly IComplaintsService _complaintsService;
+
+    public ComplaintsController(IComplaintsService complaintsService)
     {
-        private readonly IComplaintsService _complaintsService;
+        _complaintsService = complaintsService;
+    }
 
-        public ComplaintsController(IComplaintsService complaintsService)
+    // =========================================================
+    // Categories
+    // =========================================================
+
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories =
+            await _complaintsService.GetAllCategoriesAsync();
+
+        return Ok(categories);
+    }
+
+    [HttpGet("categories/{id}")]
+    public async Task<IActionResult> GetCategory(int id)
+    {
+        var category =
+            await _complaintsService.GetCategoryByIdAsync(id);
+
+        if (category == null)
+            return NotFound();
+
+        return Ok(category);
+    }
+
+    [HttpPost("categories")]
+    public async Task<IActionResult> CreateCategory(
+        CreateComplaintCategoryDto dto)
+    {
+        var category =
+            await _complaintsService.CreateCategoryAsync(dto);
+
+        return CreatedAtAction(
+            nameof(GetCategory),
+            new { id = category.ComplaintCategoryId },
+            category);
+    }
+
+    [HttpPut("categories/{id}")]
+    public async Task<IActionResult> UpdateCategory(
+        int id,
+        CreateComplaintCategoryDto dto)
+    {
+        try
         {
-            _complaintsService = complaintsService;
-        }
+            await _complaintsService.UpdateCategoryAsync(id, dto);
 
-        // GET: api/Complaints
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
         {
-            var complaints = await _complaintsService.GetAllAsync();
-
-            return Ok(complaints);
+            return NotFound();
         }
+    }
 
-        // GET: api/Complaints/5
-        [HttpGet("{complaintId}")]
-        public async Task<IActionResult> GetById(int complaintId)
+    // =========================================================
+    // Complaints
+    // =========================================================
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllComplaints()
+    {
+        var complaints =
+            await _complaintsService.GetAllComplaintsAsync();
+
+        return Ok(complaints);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetComplaint(int id)
+    {
+        var complaint =
+            await _complaintsService.GetComplaintByIdAsync(id);
+
+        if (complaint == null)
+            return NotFound();
+
+        return Ok(complaint);
+    }
+
+    [HttpGet("student/{studentId}")]
+    public async Task<IActionResult> GetComplaintsByStudent(
+        int studentId)
+    {
+        var complaints =
+            await _complaintsService
+                .GetComplaintsByStudentIdAsync(studentId);
+
+        return Ok(complaints);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateComplaint(
+        CreateComplaintDto dto)
+    {
+        try
         {
             var complaint =
-                await _complaintsService.GetByIdAsync(complaintId);
+                await _complaintsService
+                    .CreateComplaintAsync(dto);
 
-            if (complaint == null)
-                return NotFound("Complaint not found.");
-
-            return Ok(complaint);
+            return CreatedAtAction(
+                nameof(GetComplaint),
+                new { id = complaint.ComplaintId },
+                complaint);
         }
-
-        // GET: api/Complaints/student/5
-        [HttpGet("student/{studentId}")]
-        public async Task<IActionResult> GetByStudentId(int studentId)
+        catch (KeyNotFoundException ex)
         {
-            var complaints =
-                await _complaintsService.GetByStudentIdAsync(studentId);
-
-            return Ok(complaints);
+            return NotFound(ex.Message);
         }
+    }
 
-        // POST: api/Complaints
-        [HttpPost]
-        public async Task<IActionResult> Create(
-            [FromBody] CreateComplaintDto dto)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateComplaint(
+        int id,
+        UpdateComplaintDto dto)
+    {
+        try
         {
-            var complaint =
-                await _complaintsService.CreateAsync(dto);
+            await _complaintsService
+                .UpdateComplaintAsync(id, dto);
 
-            return Ok(complaint);
+            return NoContent();
         }
-
-        // PUT: api/Complaints/5
-        [HttpPut("{complaintId}")]
-        public async Task<IActionResult> Update(
-            int complaintId,
-            [FromBody] UpdateComplaintDto dto)
+        catch (KeyNotFoundException)
         {
-            var result =
-                await _complaintsService.UpdateAsync(
-                    complaintId,
-                    dto);
-
-            if (!result)
-                return NotFound("Complaint not found.");
-
-            return Ok("Complaint updated successfully.");
+            return NotFound();
         }
+    }
 
-        // PUT: api/Complaints/5/status
-        [HttpPut("{complaintId}/status")]
-        public async Task<IActionResult> UpdateStatus(
-            int complaintId,
-            [FromBody] UpdateComplaintStatusDto dto)
+    // =========================================================
+    // Status History
+    // =========================================================
+
+    [HttpGet("{id}/history")]
+    public async Task<IActionResult> GetComplaintHistory(int id)
+    {
+        try
         {
-            var result =
-                await _complaintsService.UpdateStatusAsync(
-                    complaintId,
-                    dto);
+            var history =
+                await _complaintsService
+                    .GetComplaintStatusHistoryAsync(id);
 
-            if (!result)
-                return NotFound("Complaint not found.");
-
-            return Ok("Complaint status updated successfully.");
+            return Ok(history);
         }
-
-        // PUT: api/Complaints/5/assign
-        [HttpPut("{complaintId}/assign")]
-        public async Task<IActionResult> Assign(
-            int complaintId,
-            [FromBody] AssignComplaintDto dto)
+        catch (KeyNotFoundException)
         {
-            var result =
-                await _complaintsService.AssignAsync(
-                    complaintId,
-                    dto);
-
-            if (!result)
-                return NotFound("Complaint not found.");
-
-            return Ok("Complaint assigned successfully.");
-        }
-
-        // DELETE: api/Complaints/5
-        [HttpDelete("{complaintId}")]
-        public async Task<IActionResult> Delete(int complaintId)
-        {
-            var result =
-                await _complaintsService.DeleteAsync(complaintId);
-
-            if (!result)
-                return NotFound("Complaint not found.");
-
-            return Ok("Complaint deleted successfully.");
+            return NotFound();
         }
     }
 }

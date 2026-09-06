@@ -1,13 +1,10 @@
-﻿namespace CampusServicePortal_TicUnicorns.Modules.Complaints.DTOs
+﻿namespace CampusServicePortal.Modules.Complaints.DTOs;
+
+public class UpdateComplaintDto
 {
-    public class UpdateComplaintDto
-    {
-        public string Subject { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 
-        public string Description { get; set; } = string.Empty;
+    public string ActionRemarks { get; set; } = string.Empty;
 
-        public string Category { get; set; } = string.Empty;
-
-        public string Priority { get; set; } = string.Empty;
-    }
+    public int? StatusChangedBy { get; set; }
 }

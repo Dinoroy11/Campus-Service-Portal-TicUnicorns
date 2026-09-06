@@ -1,29 +1,39 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Complaints.DTOs;
+﻿using CampusServicePortal.Modules.Complaints.DTOs;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Complaints.Interfaces.Service
+namespace CampusServicePortal.Modules.Complaints.Interfaces.Service;
+
+public interface IComplaintsService
 {
-    public interface IComplaintsService
-    {
-        Task<IEnumerable<ComplaintResponseDto>> GetAllAsync();
+    // Categories
+    Task<List<ComplaintCategoryDto>> GetAllCategoriesAsync();
 
-        Task<ComplaintResponseDto?> GetByIdAsync(int complaintId);
+    Task<ComplaintCategoryDto?> GetCategoryByIdAsync(
+        int complaintCategoryId);
 
-        Task<IEnumerable<ComplaintResponseDto>> GetByStudentIdAsync(int studentId);
+    Task<ComplaintCategoryDto> CreateCategoryAsync(
+        CreateComplaintCategoryDto dto);
 
-        Task<ComplaintResponseDto> CreateAsync(CreateComplaintDto dto);
+    Task UpdateCategoryAsync(
+        int complaintCategoryId,
+        CreateComplaintCategoryDto dto);
 
-        Task<bool> UpdateAsync(
-            int complaintId,
-            UpdateComplaintDto dto);
+    // Complaints
+    Task<List<ComplaintDto>> GetAllComplaintsAsync();
 
-        Task<bool> UpdateStatusAsync(
-            int complaintId,
-            UpdateComplaintStatusDto dto);
+    Task<ComplaintDto?> GetComplaintByIdAsync(
+        int complaintId);
 
-        Task<bool> AssignAsync(
-            int complaintId,
-            AssignComplaintDto dto);
+    Task<List<ComplaintDto>> GetComplaintsByStudentIdAsync(
+        int studentId);
 
-        Task<bool> DeleteAsync(int complaintId);
-    }
+    Task<ComplaintDto> CreateComplaintAsync(
+        CreateComplaintDto dto);
+
+    Task UpdateComplaintAsync(
+        int complaintId,
+        UpdateComplaintDto dto);
+
+    // Status History
+    Task<List<ComplaintStatusHistoryDto>>
+        GetComplaintStatusHistoryAsync(int complaintId);
 }

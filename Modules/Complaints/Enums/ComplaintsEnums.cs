@@ -1,18 +1,11 @@
-﻿namespace CampusServicePortal_TicUnicorns.Modules.Complaints.Enums
-{
-    public enum ComplaintStatus
-    {
-        Pending,
-        InProgress,
-        Resolved,
-        Rejected
-    }
+﻿namespace CampusServicePortal.Modules.Complaints.Enums;
 
-    public enum ComplaintPriority
-    {
-        Low,
-        Medium,
-        High,
-        Urgent
-    }
+public enum ComplaintStatus
+{
+    Submitted,
+    UnderReview,
+    InProgress,
+    Resolved,
+    Rejected,
+    Closed
 }

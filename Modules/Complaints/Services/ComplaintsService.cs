@@ -1,143 +1,235 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Complaints.DTOs;
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Entities;
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Interfaces.Repository;
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Interfaces.Service;
+﻿using CampusServicePortal.Modules.Complaints.DTOs;
+using CampusServicePortal.Modules.Complaints.Entities;
+using CampusServicePortal.Modules.Complaints.Interfaces.Repository;
+using CampusServicePortal.Modules.Complaints.Interfaces.Service;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Complaints.Services
+namespace CampusServicePortal.Modules.Complaints.Services;
+
+public class ComplaintsService : IComplaintsService
 {
-    public class ComplaintsService : IComplaintsService
+    private readonly IComplaintCategoryRepository _categoryRepository;
+    private readonly IComplaintRepository _complaintRepository;
+    private readonly IComplaintStatusHistoryRepository _historyRepository;
+
+    public ComplaintsService(
+        IComplaintCategoryRepository categoryRepository,
+        IComplaintRepository complaintRepository,
+        IComplaintStatusHistoryRepository historyRepository)
     {
-        private readonly IComplaintsRepository _complaintsRepository;
+        _categoryRepository = categoryRepository;
+        _complaintRepository = complaintRepository;
+        _historyRepository = historyRepository;
+    }
 
-        public ComplaintsService(IComplaintsRepository complaintsRepository)
+    // =========================================================
+    // Categories
+    // =========================================================
+
+    public async Task<List<ComplaintCategoryDto>> GetAllCategoriesAsync()
+    {
+        var categories = await _categoryRepository.GetAllAsync();
+
+        return categories.Select(x => new ComplaintCategoryDto
         {
-            _complaintsRepository = complaintsRepository;
-        }
+            ComplaintCategoryId = x.ComplaintCategoryId,
+            Name = x.Name,
+            Description = x.Description,
+            IsActive = x.IsActive
+        }).ToList();
+    }
 
-        public async Task<IEnumerable<ComplaintResponseDto>> GetAllAsync()
+    public async Task<ComplaintCategoryDto?> GetCategoryByIdAsync(
+        int complaintCategoryId)
+    {
+        var category =
+            await _categoryRepository.GetByIdAsync(complaintCategoryId);
+
+        if (category == null)
+            return null;
+
+        return new ComplaintCategoryDto
         {
-            var complaints = await _complaintsRepository.GetAllAsync();
+            ComplaintCategoryId = category.ComplaintCategoryId,
+            Name = category.Name,
+            Description = category.Description,
+            IsActive = category.IsActive
+        };
+    }
 
-            return complaints.Select(MapToResponseDto);
-        }
-
-        public async Task<ComplaintResponseDto?> GetByIdAsync(int complaintId)
+    public async Task<ComplaintCategoryDto> CreateCategoryAsync(
+        CreateComplaintCategoryDto dto)
+    {
+        var category = new ComplaintCategory
         {
-            var complaint = await _complaintsRepository.GetByIdAsync(complaintId);
+            Name = dto.Name,
+            Description = dto.Description,
+            IsActive = true
+        };
 
-            if (complaint == null)
-                return null;
+        await _categoryRepository.CreateAsync(category);
 
-            return MapToResponseDto(complaint);
-        }
-
-        public async Task<IEnumerable<ComplaintResponseDto>> GetByStudentIdAsync(
-            int studentId)
+        return new ComplaintCategoryDto
         {
-            var complaints =
-                await _complaintsRepository.GetByStudentIdAsync(studentId);
+            ComplaintCategoryId = category.ComplaintCategoryId,
+            Name = category.Name,
+            Description = category.Description,
+            IsActive = category.IsActive
+        };
+    }
 
-            return complaints.Select(MapToResponseDto);
-        }
+    public async Task UpdateCategoryAsync(
+        int complaintCategoryId,
+        CreateComplaintCategoryDto dto)
+    {
+        var category =
+            await _categoryRepository.GetByIdAsync(complaintCategoryId);
 
-        public async Task<ComplaintResponseDto> CreateAsync(
-            CreateComplaintDto dto)
+        if (category == null)
+            throw new KeyNotFoundException("Complaint category not found.");
+
+        category.Name = dto.Name;
+        category.Description = dto.Description;
+
+        await _categoryRepository.UpdateAsync(category);
+    }
+
+    // =========================================================
+    // Complaints
+    // =========================================================
+
+    public async Task<List<ComplaintDto>> GetAllComplaintsAsync()
+    {
+        var complaints = await _complaintRepository.GetAllAsync();
+
+        return complaints.Select(MapComplaintToDto).ToList();
+    }
+
+    public async Task<ComplaintDto?> GetComplaintByIdAsync(
+        int complaintId)
+    {
+        var complaint =
+            await _complaintRepository.GetByIdAsync(complaintId);
+
+        if (complaint == null)
+            return null;
+
+        return MapComplaintToDto(complaint);
+    }
+
+    public async Task<List<ComplaintDto>> GetComplaintsByStudentIdAsync(
+        int studentId)
+    {
+        var complaints =
+            await _complaintRepository.GetByStudentIdAsync(studentId);
+
+        return complaints.Select(MapComplaintToDto).ToList();
+    }
+
+    public async Task<ComplaintDto> CreateComplaintAsync(
+        CreateComplaintDto dto)
+    {
+        var categoryExists =
+            await _categoryRepository.ExistsAsync(dto.CategoryId);
+
+        if (!categoryExists)
+            throw new KeyNotFoundException(
+                "Complaint category not found.");
+
+        var complaint = new Complaint
         {
-            var complaint = new ComplaintsEntities
-            {
-                StudentId = dto.StudentId,
-                Subject = dto.Subject,
-                Description = dto.Description,
-                Category = dto.Category,
-                Priority = dto.Priority,
-                Status = "Pending",
-                CreatedAt = DateTime.UtcNow
-            };
+            CategoryId = dto.CategoryId,
+            StudentId = dto.StudentId,
+            Title = dto.Title,
+            Description = dto.Description,
+            Status = "Submitted",
+            ActionRemarks = string.Empty,
+            StatusChangedBy = null,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = null
+        };
 
-            var createdComplaint =
-                await _complaintsRepository.CreateAsync(complaint);
+        await _complaintRepository.CreateAsync(complaint);
 
-            return MapToResponseDto(createdComplaint);
-        }
+        return MapComplaintToDto(complaint);
+    }
 
-        public async Task<bool> UpdateAsync(
-            int complaintId,
-            UpdateComplaintDto dto)
+    public async Task UpdateComplaintAsync(
+        int complaintId,
+        UpdateComplaintDto dto)
+    {
+        var complaint =
+            await _complaintRepository.GetByIdAsync(complaintId);
+
+        if (complaint == null)
+            throw new KeyNotFoundException("Complaint not found.");
+
+        complaint.Status = dto.Status;
+        complaint.ActionRemarks = dto.ActionRemarks;
+        complaint.StatusChangedBy = dto.StatusChangedBy;
+        complaint.UpdatedAt = DateTime.UtcNow;
+
+        await _complaintRepository.UpdateAsync(complaint);
+
+        var history = new ComplaintStatusHistory
         {
-            var complaint =
-                await _complaintsRepository.GetByIdAsync(complaintId);
+            ComplaintId = complaint.ComplaintId,
+            Status = complaint.Status,
+            Remarks = complaint.ActionRemarks,
+            ChangedByUserId = dto.StatusChangedBy ?? 0,
+            ChangedAt = DateTime.UtcNow
+        };
 
-            if (complaint == null)
-                return false;
+        await _historyRepository.CreateAsync(history);
+    }
 
-            complaint.Subject = dto.Subject;
-            complaint.Description = dto.Description;
-            complaint.Category = dto.Category;
-            complaint.Priority = dto.Priority;
-            complaint.UpdatedAt = DateTime.UtcNow;
+    // =========================================================
+    // Status History
+    // =========================================================
 
-            return await _complaintsRepository.UpdateAsync(complaint);
-        }
+    public async Task<List<ComplaintStatusHistoryDto>>
+        GetComplaintStatusHistoryAsync(int complaintId)
+    {
+        var complaintExists =
+            await _complaintRepository.ExistsAsync(complaintId);
 
-        public async Task<bool> UpdateStatusAsync(
-            int complaintId,
-            UpdateComplaintStatusDto dto)
+        if (!complaintExists)
+            throw new KeyNotFoundException("Complaint not found.");
+
+        var history =
+            await _historyRepository.GetByComplaintIdAsync(complaintId);
+
+        return history.Select(x => new ComplaintStatusHistoryDto
         {
-            var complaint =
-                await _complaintsRepository.GetByIdAsync(complaintId);
+            ComplaintStatusHistoryId =
+                x.ComplaintStatusHistoryId,
 
-            if (complaint == null)
-                return false;
+            ComplaintId = x.ComplaintId,
+            Status = x.Status,
+            Remarks = x.Remarks,
+            ChangedByUserId = x.ChangedByUserId,
+            ChangedAt = x.ChangedAt
+        }).ToList();
+    }
 
-            return await _complaintsRepository.UpdateStatusAsync(
-                complaintId,
-                dto.Status,
-                dto.Resolution);
-        }
+    // =========================================================
+    // Mapping
+    // =========================================================
 
-        public async Task<bool> AssignAsync(
-            int complaintId,
-            AssignComplaintDto dto)
+    private static ComplaintDto MapComplaintToDto(
+        Complaint complaint)
+    {
+        return new ComplaintDto
         {
-            var complaint =
-                await _complaintsRepository.GetByIdAsync(complaintId);
-
-            if (complaint == null)
-                return false;
-
-            return await _complaintsRepository.AssignAsync(
-                complaintId,
-                dto.AssignedTo);
-        }
-
-        public async Task<bool> DeleteAsync(int complaintId)
-        {
-            var complaint =
-                await _complaintsRepository.GetByIdAsync(complaintId);
-
-            if (complaint == null)
-                return false;
-
-            return await _complaintsRepository.DeleteAsync(complaintId);
-        }
-
-        private static ComplaintResponseDto MapToResponseDto(
-            ComplaintsEntities complaint)
-        {
-            return new ComplaintResponseDto
-            {
-                ComplaintId = complaint.ComplaintId,
-                StudentId = complaint.StudentId,
-                Subject = complaint.Subject,
-                Description = complaint.Description,
-                Category = complaint.Category,
-                Status = complaint.Status,
-                Priority = complaint.Priority,
-                AssignedTo = complaint.AssignedTo,
-                Resolution = complaint.Resolution,
-                CreatedAt = complaint.CreatedAt,
-                UpdatedAt = complaint.UpdatedAt
-            };
-        }
+            ComplaintId = complaint.ComplaintId,
+            CategoryId = complaint.CategoryId,
+            StudentId = complaint.StudentId,
+            Title = complaint.Title,
+            Description = complaint.Description,
+            Status = complaint.Status,
+            ActionRemarks = complaint.ActionRemarks,
+            StatusChangedBy = complaint.StatusChangedBy,
+            CreatedAt = complaint.CreatedAt,
+            UpdatedAt = complaint.UpdatedAt
+        };
     }
 }

@@ -1,53 +1,59 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Complaints.Entities;
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Interfaces.Repository;
+﻿using CampusServicePortal.Modules.Complaints.Entities;
+using CampusServicePortal.Modules.Complaints.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Complaints.Repositories
+namespace CampusServicePortal.Modules.Complaints.Repositories;
+
+public class ComplaintRepository : IComplaintRepository
 {
-    public class ComplaintsRepository : IComplaintsRepository
+    private readonly CampusDbContext _context;
+
+    public ComplaintRepository(CampusDbContext context)
     {
-        public Task<IEnumerable<ComplaintsEntities>> GetAllAsync()
-        {
-            throw new NotImplementedException();
-        }
+        _context = context;
+    }
 
-        public Task<ComplaintsEntities?> GetByIdAsync(int complaintId)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<List<Complaint>> GetAllAsync()
+    {
+        return await _context.Set<Complaint>()
+            .AsNoTracking()
+            .ToListAsync();
+    }
 
-        public Task<IEnumerable<ComplaintsEntities>> GetByStudentIdAsync(int studentId)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<Complaint?> GetByIdAsync(int complaintId)
+    {
+        return await _context.Set<Complaint>()
+            .FirstOrDefaultAsync(x =>
+                x.ComplaintId == complaintId);
+    }
 
-        public Task<ComplaintsEntities> CreateAsync(ComplaintsEntities complaint)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<List<Complaint>> GetByStudentIdAsync(
+        int studentId)
+    {
+        return await _context.Set<Complaint>()
+            .AsNoTracking()
+            .Where(x => x.StudentId == studentId)
+            .ToListAsync();
+    }
 
-        public Task<bool> UpdateAsync(ComplaintsEntities complaint)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<Complaint> CreateAsync(Complaint complaint)
+    {
+        await _context.Set<Complaint>().AddAsync(complaint);
+        await _context.SaveChangesAsync();
 
-        public Task<bool> UpdateStatusAsync(
-            int complaintId,
-            string status,
-            string? resolution)
-        {
-            throw new NotImplementedException();
-        }
+        return complaint;
+    }
 
-        public Task<bool> AssignAsync(
-            int complaintId,
-            int assignedTo)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task UpdateAsync(Complaint complaint)
+    {
+        _context.Set<Complaint>().Update(complaint);
+        await _context.SaveChangesAsync();
+    }
 
-        public Task<bool> DeleteAsync(int complaintId)
-        {
-            throw new NotImplementedException();
-        }
+    public async Task<bool> ExistsAsync(int complaintId)
+    {
+        return await _context.Set<Complaint>()
+            .AnyAsync(x => x.ComplaintId == complaintId);
     }
 }
