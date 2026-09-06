@@ -94,21 +94,6 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Services
                 dto.RejectionReason);
         }
 
-        public async Task<bool> AssignAsync(
-            int certificateId,
-            AssignCertificateDto dto)
-        {
-            var certificate =
-                await _certificatesRepository.GetByIdAsync(certificateId);
-
-            if (certificate == null)
-                return false;
-
-            return await _certificatesRepository.AssignAsync(
-                certificateId,
-                dto.AssignedTo);
-        }
-
         public async Task<bool> DeleteAsync(int certificateId)
         {
             var certificate =
@@ -132,8 +117,6 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Services
                 Status = certificate.Status,
                 RequestedAt = certificate.RequestedAt,
                 ProcessedAt = certificate.ProcessedAt,
-                IssuedAt = certificate.IssuedAt,
-                AssignedTo = certificate.AssignedTo,
                 RejectionReason = certificate.RejectionReason,
                 DocumentPath = certificate.DocumentPath
             };

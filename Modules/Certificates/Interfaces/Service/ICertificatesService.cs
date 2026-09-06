@@ -8,7 +8,8 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Servic
 
         Task<CertificateResponseDto?> GetByIdAsync(int certificateId);
 
-        Task<IEnumerable<CertificateResponseDto>> GetByStudentIdAsync(int studentId);
+        Task<IEnumerable<CertificateResponseDto>> GetByStudentIdAsync(
+            int studentId);
 
         Task<CertificateResponseDto> CreateAsync(
             CreateCertificateDto dto);
@@ -20,10 +21,6 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Servic
         Task<bool> UpdateStatusAsync(
             int certificateId,
             UpdateCertificateStatusDto dto);
-
-        Task<bool> AssignAsync(
-            int certificateId,
-            AssignCertificateDto dto);
 
         Task<bool> DeleteAsync(int certificateId);
     }

@@ -1,56 +1,103 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Repositories
 {
     public class CertificatesRepository : ICertificatesRepository
     {
-        public Task<IEnumerable<CertificatesEntities>> GetAllAsync()
+        private readonly CampusDbContext _context;
+
+        public CertificatesRepository(CampusDbContext context)
         {
-            throw new NotImplementedException();
+            _context = context;
         }
 
-        public Task<CertificatesEntities?> GetByIdAsync(int certificateId)
+        public async Task<IEnumerable<CertificatesEntities>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            return await _context.Certificates
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public Task<IEnumerable<CertificatesEntities>> GetByStudentIdAsync(
-            int studentId)
+        public async Task<CertificatesEntities?> GetByIdAsync(
+            int certificateId)
         {
-            throw new NotImplementedException();
+            return await _context.Certificates
+                .FirstOrDefaultAsync(c =>
+                    c.CertificateId == certificateId);
         }
 
-        public Task<CertificatesEntities> CreateAsync(
+        public async Task<IEnumerable<CertificatesEntities>>
+            GetByStudentIdAsync(int studentId)
+        {
+            return await _context.Certificates
+                .AsNoTracking()
+                .Where(c => c.StudentId == studentId)
+                .ToListAsync();
+        }
+
+        public async Task<CertificatesEntities> CreateAsync(
             CertificatesEntities certificate)
         {
-            throw new NotImplementedException();
+            await _context.Certificates.AddAsync(certificate);
+            await _context.SaveChangesAsync();
+
+            return certificate;
         }
 
-        public Task<bool> UpdateAsync(
+        public async Task<bool> UpdateAsync(
             CertificatesEntities certificate)
         {
-            throw new NotImplementedException();
+            _context.Certificates.Update(certificate);
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> UpdateStatusAsync(
+        public async Task<bool> UpdateStatusAsync(
             int certificateId,
             string status,
             string? rejectionReason)
         {
-            throw new NotImplementedException();
+            var certificate =
+                await _context.Certificates
+                    .FirstOrDefaultAsync(c =>
+                        c.CertificateId == certificateId);
+
+            if (certificate == null)
+                return false;
+
+            certificate.Status = status;
+            certificate.RejectionReason = rejectionReason;
+
+            if (status == "Processing" || status == "Done")
+            {
+                certificate.ProcessedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> AssignAsync(
-            int certificateId,
-            int assignedTo)
+        public async Task<bool> DeleteAsync(int certificateId)
         {
-            throw new NotImplementedException();
-        }
+            var certificate =
+                await _context.Certificates
+                    .FirstOrDefaultAsync(c =>
+                        c.CertificateId == certificateId);
 
-        public Task<bool> DeleteAsync(int certificateId)
-        {
-            throw new NotImplementedException();
+            if (certificate == null)
+                return false;
+
+            _context.Certificates.Remove(certificate);
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

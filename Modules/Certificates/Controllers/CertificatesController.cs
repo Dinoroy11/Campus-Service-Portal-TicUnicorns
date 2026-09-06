@@ -94,23 +94,6 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Controllers
             return Ok("Certificate status updated successfully.");
         }
 
-        // PUT: api/Certificates/1/assign
-        [HttpPut("{certificateId}/assign")]
-        public async Task<IActionResult> Assign(
-            int certificateId,
-            [FromBody] AssignCertificateDto dto)
-        {
-            var result =
-                await _certificatesService.AssignAsync(
-                    certificateId,
-                    dto);
-
-            if (!result)
-                return NotFound("Certificate request not found.");
-
-            return Ok("Certificate assigned successfully.");
-        }
-
         // DELETE: api/Certificates/1
         [HttpDelete("{certificateId}")]
         public async Task<IActionResult> Delete(int certificateId)

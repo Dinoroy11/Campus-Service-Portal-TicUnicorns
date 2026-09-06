@@ -21,10 +21,6 @@ namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Reposi
             string status,
             string? rejectionReason);
 
-        Task<bool> AssignAsync(
-            int certificateId,
-            int assignedTo);
-
         Task<bool> DeleteAsync(int certificateId);
     }
 }

@@ -16,10 +16,6 @@
 
         public DateTime? ProcessedAt { get; set; }
 
-        public DateTime? IssuedAt { get; set; }
-
-        public int? AssignedTo { get; set; }
-
         public string? RejectionReason { get; set; }
 
         public string? DocumentPath { get; set; }

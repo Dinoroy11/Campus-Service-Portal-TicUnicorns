@@ -12,8 +12,8 @@
     public enum CertificateStatus
     {
         Pending,
-        Approved,
-        Rejected,
-        Issued
+        Processing,
+        Done,
+        Rejected
     }
 }
