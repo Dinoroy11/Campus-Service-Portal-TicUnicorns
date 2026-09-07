@@ -1,36 +1,52 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>CampusServicePortal_TicUnicorns</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>CampusServicePortal_TicUnicorns</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Modules\Canteens\**" />
+	  <Content Remove="Modules\Canteens\**" />
+	  <EmbeddedResource Remove="Modules\Canteens\**" />
+	  <None Remove="Modules\Canteens\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Common\" />
-    <Folder Include="Data\" />
-    <Folder Include="Modules\Identity\" />
-    <Folder Include="Modules\Hostels\" />
-    <Folder Include="Modules\Labs\" />
-    <Folder Include="Modules\Events\" />
-    <Folder Include="Modules\Fees\" />
-    <Folder Include="Modules\Certificates\" />
-    <Folder Include="Modules\Complaints\" />
-    <Folder Include="Modules\DashBoards\" />
-    <Folder Include="Modules\Canteens\" />
-    <Folder Include="Modules\Laundry\" />
-    <Folder Include="Modules\Gym\" />
-    <Folder Include="Modules\Leave\" />
-    <Folder Include="Modules\AuditLogs\" />
-    <Folder Include="Modules\Sports\" />
-    <Folder Include="Modules\SystemSettings\" />
-    <Folder Include="Modules\Notifications\" />
-    <Folder Include="Modules\Students\" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="FluentValidation" Version="8.6.2" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.20" />
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.20" />
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.20">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Common\" />
+		<Folder Include="Data\" />
+		<Folder Include="Modules\Identity\" />
+		<Folder Include="Modules\Hostels\" />
+		<Folder Include="Modules\Labs\" />
+		<Folder Include="Modules\Events\" />
+		<Folder Include="Modules\Fees\" />
+		<Folder Include="Modules\Certificates\" />
+		<Folder Include="Modules\Complaints\" />
+		<Folder Include="Modules\DashBoards\" />
+		<Folder Include="Modules\Laundry\" />
+		<Folder Include="Modules\Gym\" />
+		<Folder Include="Modules\Leave\" />
+		<Folder Include="Modules\AuditLogs\" />
+		<Folder Include="Modules\Sports\" />
+		<Folder Include="Modules\SystemSettings\" />
+		<Folder Include="Modules\Notifications\" />
+		<Folder Include="Modules\Students\" />
+	</ItemGroup>
 
 </Project>
