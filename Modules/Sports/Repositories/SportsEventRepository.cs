@@ -1,32 +1,47 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Sports.Repositories;
 
 public class SportsEventRepository : ISportsEventRepository
 {
-    public Task<SportsEvent?> GetByIdAsync(int sportsEventId)
+    private readonly CampusDbContext _context;
+
+    public SportsEventRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<SportsEvent>> GetAllAsync()
+    public async Task<SportsEvent?> GetByIdAsync(int sportsEventId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsEvents
+            .FirstOrDefaultAsync(x => x.SportsEventId == sportsEventId);
     }
 
-    public Task AddAsync(SportsEvent sportsEvent)
+    public async Task<IEnumerable<SportsEvent>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.SportsEvents
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task UpdateAsync(SportsEvent sportsEvent)
+    public async Task AddAsync(SportsEvent sportsEvent)
     {
-        throw new NotImplementedException();
+        await _context.SportsEvents.AddAsync(sportsEvent);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int sportsEventId)
+    public async Task UpdateAsync(SportsEvent sportsEvent)
     {
-        throw new NotImplementedException();
+        _context.SportsEvents.Update(sportsEvent);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ExistsAsync(int sportsEventId)
+    {
+        return await _context.SportsEvents
+            .AnyAsync(x => x.SportsEventId == sportsEventId);
     }
 }

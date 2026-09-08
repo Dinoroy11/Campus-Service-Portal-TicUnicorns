@@ -1,44 +1,63 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Students.Repositories;
 
 public class StudentMasterListRepository : IStudentMasterListRepository
 {
-    public Task<StudentMasterList?> GetByIdAsync(int masterStudentId)
+    private readonly CampusDbContext _context;
+
+    public StudentMasterListRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<StudentMasterList>> GetAllAsync()
+    public async Task<StudentMasterList?> GetByIdAsync(int masterStudentId)
     {
-        throw new NotImplementedException();
+        return await _context.StudentMasterLists
+            .FirstOrDefaultAsync(x => x.MasterStudentId == masterStudentId);
     }
 
-    public Task<StudentMasterList?> GetByUniversityStudentIdAsync(
+    public async Task<IEnumerable<StudentMasterList>> GetAllAsync()
+    {
+        return await _context.StudentMasterLists
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<StudentMasterList?> GetByUniversityStudentIdAsync(
         string universityStudentId)
     {
-        throw new NotImplementedException();
+        return await _context.StudentMasterLists
+            .FirstOrDefaultAsync(x =>
+                x.UniversityStudentId == universityStudentId);
     }
 
-    public Task AddAsync(StudentMasterList studentMasterList)
+    public async Task AddAsync(StudentMasterList studentMasterList)
     {
-        throw new NotImplementedException();
+        await _context.StudentMasterLists.AddAsync(studentMasterList);
+        await _context.SaveChangesAsync();
     }
 
-    public Task UpdateAsync(StudentMasterList studentMasterList)
+    public async Task UpdateAsync(StudentMasterList studentMasterList)
     {
-        throw new NotImplementedException();
+        _context.StudentMasterLists.Update(studentMasterList);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int masterStudentId)
+    public async Task<bool> ExistsAsync(int masterStudentId)
     {
-        throw new NotImplementedException();
+        return await _context.StudentMasterLists
+            .AnyAsync(x => x.MasterStudentId == masterStudentId);
     }
 
-    public Task<bool> ExistsByUniversityStudentIdAsync(
+    public async Task<bool> ExistsByUniversityStudentIdAsync(
         string universityStudentId)
     {
-        throw new NotImplementedException();
+        return await _context.StudentMasterLists
+            .AnyAsync(x =>
+                x.UniversityStudentId == universityStudentId);
     }
 }

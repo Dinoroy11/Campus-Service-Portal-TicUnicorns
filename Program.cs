@@ -58,6 +58,9 @@ using CampusServicePortal.Modules.SystemSettings.Interfaces.Repository;
 using CampusServicePortal.Modules.SystemSettings.Interfaces.Service;
 using CampusServicePortal.Modules.SystemSettings.Repositories;
 using CampusServicePortal.Modules.SystemSettings.Services;
+// =========================================================
+// Data
+// =========================================================
 using CampusServicePortal_TicUnicorns.Data;
 // =========================================================
 // Auth
@@ -82,7 +85,7 @@ using CampusServicePortal_TicUnicorns.Modules.Certificates.Repositories;
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Services;
 using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 // =========================================================
-// Audit Logs
+// Identity / Audit Logs
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Repository;
 using CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Service;
@@ -164,11 +167,6 @@ builder.Services.AddScoped<ICertificatesService, CertificatesService>();
 
 builder.Services.AddScoped<IComplaintCategoryRepository, ComplaintCategoryRepository>();
 builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
-
-// NOTE:
-// ComplaintStatusHistoryRepository currently does NOT implement
-// IComplaintStatusHistoryRepository.
-// Therefore ComplaintsService cannot be registered yet.
 
 // =========================================================
 // Events
@@ -257,21 +255,15 @@ builder.Services.AddScoped<IIdentityService, IdentityService>();
 // Sports
 // =========================================================
 
-// Working registrations
 builder.Services.AddScoped<ICoachMeetingRepository, CoachMeetingRepository>();
 builder.Services.AddScoped<ISportsEventRepository, SportsEventRepository>();
+builder.Services.AddScoped<ISportsEventDepartmentLimitRepository, SportsEventDepartmentLimitRepository>();
+builder.Services.AddScoped<ISportsRegistrationRepository, SportsRegistrationRepository>();
 
 builder.Services.AddScoped<ICoachMeetingService, CoachMeetingService>();
 builder.Services.AddScoped<ISportsEventService, SportsEventService>();
-
-// NOTE:
-// SportsEventDepartmentLimitRepository currently does NOT implement
-// ISportsEventDepartmentLimitRepository.
-//
-// SportsRegistrationRepository currently does NOT implement
-// ISportsRegistrationRepository.
-//
-// Therefore the related services cannot be registered safely yet.
+builder.Services.AddScoped<ISportsEventDepartmentLimitService, SportsEventDepartmentLimitService>();
+builder.Services.AddScoped<ISportsRegistrationService, SportsRegistrationService>();
 
 // =========================================================
 // Students

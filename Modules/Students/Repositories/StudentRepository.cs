@@ -1,37 +1,53 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Students.Repositories;
 
 public class StudentRepository : IStudentRepository
 {
-    public Task<Student?> GetByIdAsync(int studentId)
+    private readonly CampusDbContext _context;
+
+    public StudentRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<Student>> GetAllAsync()
+    public async Task<Student?> GetByIdAsync(int studentId)
     {
-        throw new NotImplementedException();
+        return await _context.Students
+            .FirstOrDefaultAsync(x => x.StudentId == studentId);
     }
 
-    public Task AddAsync(Student student)
+    public async Task<IEnumerable<Student>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.Students
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task UpdateAsync(Student student)
+    public async Task AddAsync(Student student)
     {
-        throw new NotImplementedException();
+        await _context.Students.AddAsync(student);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int studentId)
+    public async Task UpdateAsync(Student student)
     {
-        throw new NotImplementedException();
+        _context.Students.Update(student);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsByMasterStudentIdAsync(int masterStudentId)
+    public async Task<bool> ExistsAsync(int studentId)
     {
-        throw new NotImplementedException();
+        return await _context.Students
+            .AnyAsync(x => x.StudentId == studentId);
+    }
+
+    public async Task<bool> ExistsByMasterStudentIdAsync(int masterStudentId)
+    {
+        return await _context.Students
+            .AnyAsync(x => x.MasterStudentId == masterStudentId);
     }
 }
