@@ -1,22 +1,37 @@
 ﻿using CampusServicePortal.Modules.Identity.Entities;
+using CampusServicePortal_TicUnicorns.Data;
 using CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Identity.Repositories;
 
 public class AuditLogRepository : IAuditLogRepository
 {
-    public Task AddAsync(AuditLog auditLog)
+    private readonly CampusDbContext _context;
+
+    public AuditLogRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<AuditLog>> GetAllAsync()
+    public async Task AddAsync(AuditLog auditLog)
     {
-        throw new NotImplementedException();
+        await _context.AuditLogs.AddAsync(auditLog);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<IEnumerable<AuditLog>> GetByUserIdAsync(int userId)
+    public async Task<IEnumerable<AuditLog>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.AuditLogs
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByUserIdAsync(int userId)
+    {
+        return await _context.AuditLogs
+            .AsNoTracking()
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
     }
 }

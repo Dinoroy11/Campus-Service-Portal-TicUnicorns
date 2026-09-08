@@ -1,40 +1,48 @@
 ﻿using GymEntity = CampusServicePortal.Modules.Gym.Entities.Gym;
 using CampusServicePortal.Modules.Gym.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal.Modules.Gym.Repositories
 {
     public class GymRepository : IGymRepository
     {
-        private readonly List<GymEntity> _gyms = new();
+        private readonly CampusDbContext _context;
 
-        public Task<IEnumerable<GymEntity>> GetAllGymsAsync()
+        public GymRepository(CampusDbContext context)
         {
-            return Task.FromResult<IEnumerable<GymEntity>>(_gyms);
+            _context = context;
         }
 
-        public Task<GymEntity?> GetGymByIdAsync(int gymId)
+        public async Task<IEnumerable<GymEntity>> GetAllGymsAsync()
         {
-            var gym = _gyms.FirstOrDefault(x => x.GymId == gymId);
-
-            return Task.FromResult(gym);
+            return await _context.Gyms
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public Task<GymEntity> CreateGymAsync(GymEntity gym)
+        public async Task<GymEntity?> GetGymByIdAsync(int gymId)
         {
-            gym.GymId = _gyms.Count + 1;
-
-            _gyms.Add(gym);
-
-            return Task.FromResult(gym);
+            return await _context.Gyms
+                .FirstOrDefaultAsync(g => g.GymId == gymId);
         }
 
-        public Task<GymEntity?> UpdateGymAsync(GymEntity gym)
+        public async Task<GymEntity> CreateGymAsync(GymEntity gym)
         {
-            var existingGym = _gyms.FirstOrDefault(x => x.GymId == gym.GymId);
+            await _context.Gyms.AddAsync(gym);
+            await _context.SaveChangesAsync();
+
+            return gym;
+        }
+
+        public async Task<GymEntity?> UpdateGymAsync(GymEntity gym)
+        {
+            var existingGym = await _context.Gyms
+                .FirstOrDefaultAsync(g => g.GymId == gym.GymId);
 
             if (existingGym == null)
             {
-                return Task.FromResult<GymEntity?>(null);
+                return null;
             }
 
             existingGym.Name = gym.Name;
@@ -43,21 +51,25 @@ namespace CampusServicePortal.Modules.Gym.Repositories
             existingGym.Description = gym.Description;
             existingGym.IsActive = gym.IsActive;
 
-            return Task.FromResult<GymEntity?>(existingGym);
+            await _context.SaveChangesAsync();
+
+            return existingGym;
         }
 
-        public Task<bool> DeleteGymAsync(int gymId)
+        public async Task<bool> DeleteGymAsync(int gymId)
         {
-            var gym = _gyms.FirstOrDefault(x => x.GymId == gymId);
+            var gym = await _context.Gyms
+                .FirstOrDefaultAsync(g => g.GymId == gymId);
 
             if (gym == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            _gyms.Remove(gym);
+            _context.Gyms.Remove(gym);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(true);
+            return true;
         }
     }
 }

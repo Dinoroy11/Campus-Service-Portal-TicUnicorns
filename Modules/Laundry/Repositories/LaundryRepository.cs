@@ -1,55 +1,114 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Laundry.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Laundry.Repositories
 {
     public class LaundryRepository : ILaundryRepository
     {
-        public Task<IEnumerable<LaundryEntities>> GetAllAsync()
+        private readonly CampusDbContext _context;
+
+        public LaundryRepository(CampusDbContext context)
         {
-            throw new NotImplementedException();
+            _context = context;
         }
 
-        public Task<LaundryEntities?> GetByIdAsync(int laundryId)
+        public async Task<IEnumerable<LaundryEntities>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            return await _context.LaundryEntities
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public Task<IEnumerable<LaundryEntities>> GetByStudentIdAsync(
+        public async Task<LaundryEntities?> GetByIdAsync(int laundryId)
+        {
+            return await _context.LaundryEntities
+                .FirstOrDefaultAsync(l => l.LaundryId == laundryId);
+        }
+
+        public async Task<IEnumerable<LaundryEntities>> GetByStudentIdAsync(
             int studentId)
         {
-            throw new NotImplementedException();
+            return await _context.LaundryEntities
+                .AsNoTracking()
+                .Where(l => l.StudentId == studentId)
+                .ToListAsync();
         }
 
-        public Task<LaundryEntities> CreateAsync(
+        public async Task<LaundryEntities> CreateAsync(
             LaundryEntities laundry)
         {
-            throw new NotImplementedException();
+            await _context.LaundryEntities.AddAsync(laundry);
+            await _context.SaveChangesAsync();
+
+            return laundry;
         }
 
-        public Task<bool> UpdateAsync(
+        public async Task<bool> UpdateAsync(
             LaundryEntities laundry)
         {
-            throw new NotImplementedException();
+            var existingLaundry = await _context.LaundryEntities
+                .FirstOrDefaultAsync(l => l.LaundryId == laundry.LaundryId);
+
+            if (existingLaundry == null)
+                return false;
+
+            existingLaundry.ServiceType = laundry.ServiceType;
+            existingLaundry.Quantity = laundry.Quantity;
+            existingLaundry.PickupMethod = laundry.PickupMethod;
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> UpdateStatusAsync(
+        public async Task<bool> UpdateStatusAsync(
             int laundryId,
             string status)
         {
-            throw new NotImplementedException();
+            var laundry = await _context.LaundryEntities
+                .FirstOrDefaultAsync(l => l.LaundryId == laundryId);
+
+            if (laundry == null)
+                return false;
+
+            laundry.Status = status;
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> AssignAsync(
+        public async Task<bool> AssignAsync(
             int laundryId,
             int assignedTo)
         {
-            throw new NotImplementedException();
+            var laundry = await _context.LaundryEntities
+                .FirstOrDefaultAsync(l => l.LaundryId == laundryId);
+
+            if (laundry == null)
+                return false;
+
+            laundry.AssignedTo = assignedTo;
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> DeleteAsync(int laundryId)
+        public async Task<bool> DeleteAsync(int laundryId)
         {
-            throw new NotImplementedException();
+            var laundry = await _context.LaundryEntities
+                .FirstOrDefaultAsync(l => l.LaundryId == laundryId);
+
+            if (laundry == null)
+                return false;
+
+            _context.LaundryEntities.Remove(laundry);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

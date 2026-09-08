@@ -1,43 +1,51 @@
 ﻿using LeaveEntity = CampusServicePortal.Modules.Leave.Entities.Leave;
 using CampusServicePortal.Modules.Leave.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal.Modules.Leave.Repositories
 {
     public class LeaveRepository : ILeaveRepository
     {
-        private readonly List<LeaveEntity> _leaves = new();
+        private readonly CampusDbContext _context;
 
-        public Task<IEnumerable<LeaveEntity>> GetAllLeavesAsync()
+        public LeaveRepository(CampusDbContext context)
         {
-            return Task.FromResult<IEnumerable<LeaveEntity>>(_leaves);
+            _context = context;
         }
 
-        public Task<LeaveEntity?> GetLeaveByIdAsync(int leaveId)
+        public async Task<IEnumerable<LeaveEntity>> GetAllLeavesAsync()
         {
-            var leave = _leaves.FirstOrDefault(x => x.LeaveId == leaveId);
-
-            return Task.FromResult(leave);
+            return await _context.Leaves
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public Task<LeaveEntity> CreateLeaveAsync(LeaveEntity leave)
+        public async Task<LeaveEntity?> GetLeaveByIdAsync(int leaveId)
         {
-            leave.LeaveId = _leaves.Count + 1;
+            return await _context.Leaves
+                .FirstOrDefaultAsync(l => l.LeaveId == leaveId);
+        }
+
+        public async Task<LeaveEntity> CreateLeaveAsync(LeaveEntity leave)
+        {
             leave.CreatedAt = DateTime.UtcNow;
             leave.Status = "Pending";
 
-            _leaves.Add(leave);
+            await _context.Leaves.AddAsync(leave);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(leave);
+            return leave;
         }
 
-        public Task<LeaveEntity?> UpdateLeaveAsync(LeaveEntity leave)
+        public async Task<LeaveEntity?> UpdateLeaveAsync(LeaveEntity leave)
         {
-            var existingLeave = _leaves
-                .FirstOrDefault(x => x.LeaveId == leave.LeaveId);
+            var existingLeave = await _context.Leaves
+                .FirstOrDefaultAsync(l => l.LeaveId == leave.LeaveId);
 
             if (existingLeave == null)
             {
-                return Task.FromResult<LeaveEntity?>(null);
+                return null;
             }
 
             existingLeave.UserId = leave.UserId;
@@ -47,22 +55,25 @@ namespace CampusServicePortal.Modules.Leave.Repositories
             existingLeave.Reason = leave.Reason;
             existingLeave.Status = leave.Status;
 
-            return Task.FromResult<LeaveEntity?>(existingLeave);
+            await _context.SaveChangesAsync();
+
+            return existingLeave;
         }
 
-        public Task<bool> DeleteLeaveAsync(int leaveId)
+        public async Task<bool> DeleteLeaveAsync(int leaveId)
         {
-            var leave = _leaves
-                .FirstOrDefault(x => x.LeaveId == leaveId);
+            var leave = await _context.Leaves
+                .FirstOrDefaultAsync(l => l.LeaveId == leaveId);
 
             if (leave == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            _leaves.Remove(leave);
+            _context.Leaves.Remove(leave);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(true);
+            return true;
         }
     }
 }
