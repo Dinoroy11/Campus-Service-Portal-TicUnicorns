@@ -2,47 +2,63 @@
 // Gym
 // =========================================================
 using CampusServicePortal.Modules.Gym.Entities;
+
 // =========================================================
 // Hostels
 // =========================================================
 using CampusServicePortal.Modules.Hostels.Entities;
+
 // =========================================================
 // Identity
 // =========================================================
 using CampusServicePortal.Modules.Identity.Entities;
+
 // =========================================================
 // Leave
 // =========================================================
 using CampusServicePortal.Modules.Leave.Entities;
+
 // =========================================================
 // Notifications
 // =========================================================
 using CampusServicePortal.Modules.Notifications.Entities;
+
 // =========================================================
 // System Settings
 // =========================================================
 using CampusServicePortal.Modules.SystemSettings.Entities;
 
-
 // =========================================================
 // Canteens
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
+
 // =========================================================
 // Certificates
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
+
 // =========================================================
 // Complaints
 // =========================================================
-
 using CampusServicePortal.Modules.Complaints.Entities;
+
 // =========================================================
 // Laundry
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
-using Microsoft.EntityFrameworkCore;
 
+// =========================================================
+// Students
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
+
+// =========================================================
+// Sports
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Data;
 
@@ -52,7 +68,6 @@ public class CampusDbContext : DbContext
         : base(options)
     {
     }
-
 
     // =========================================================
     // IDENTITY & ACCESS
@@ -76,7 +91,6 @@ public class CampusDbContext : DbContext
 
     public DbSet<CanteenStaffAssignment> CanteenStaffAssignments { get; set; }
 
-
     // =========================================================
     // HOSTELS
     // =========================================================
@@ -95,7 +109,6 @@ public class CampusDbContext : DbContext
 
     public DbSet<HostelAllocation> HostelAllocations { get; set; }
 
-
     // =========================================================
     // GYM
     // =========================================================
@@ -106,13 +119,11 @@ public class CampusDbContext : DbContext
 
     public DbSet<GymSlot> GymSlots { get; set; }
 
-
     // =========================================================
     // LAUNDRY
     // =========================================================
 
     public DbSet<LaundryEntities> LaundryEntities { get; set; }
-
 
     // =========================================================
     // LEAVE
@@ -120,13 +131,11 @@ public class CampusDbContext : DbContext
 
     public DbSet<Leave> Leaves { get; set; }
 
-
     // =========================================================
     // NOTIFICATIONS
     // =========================================================
 
     public DbSet<Notification> Notifications { get; set; }
-
 
     // =========================================================
     // SYSTEM SETTINGS
@@ -134,17 +143,17 @@ public class CampusDbContext : DbContext
 
     public DbSet<SystemSetting> SystemSettings { get; set; }
 
-
-
     // =========================================================
     // CANTEENS
     // =========================================================
 
     public DbSet<MealPackage> MealPackages { get; set; }
-    public DbSet<MealSubscription> MealSubscriptions { get; set; }
-    public DbSet<MealAbsence> MealAbsences { get; set; }
-    public DbSet<MealUsage> MealUsages { get; set; }
 
+    public DbSet<MealSubscription> MealSubscriptions { get; set; }
+
+    public DbSet<MealAbsence> MealAbsences { get; set; }
+
+    public DbSet<MealUsage> MealUsages { get; set; }
 
     // =========================================================
     // CERTIFICATES
@@ -152,11 +161,31 @@ public class CampusDbContext : DbContext
 
     public DbSet<CertificatesEntities> Certificates { get; set; }
 
-
     // =========================================================
     // COMPLAINTS
     // =========================================================
+
     public DbSet<Complaint> Complaints { get; set; }
+
+    // =========================================================
+    // STUDENTS
+    // =========================================================
+
+    public DbSet<Student> Students { get; set; }
+
+    public DbSet<StudentMasterList> StudentMasterLists { get; set; }
+
+    // =========================================================
+    // SPORTS
+    // =========================================================
+
+    public DbSet<SportsEvent> SportsEvents { get; set; }
+
+    public DbSet<SportsEventDepartmentLimit> SportsEventDepartmentLimits { get; set; }
+
+    public DbSet<SportsRegistration> SportsRegistrations { get; set; }
+
+    public DbSet<CoachMeeting> CoachMeetings { get; set; }
 
     // =========================================================
     // EF CORE MODEL CONFIGURATION
