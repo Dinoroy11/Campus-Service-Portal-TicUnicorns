@@ -9,6 +9,7 @@ using CampusServicePortal.Modules.Complaints.Services;
 // =========================================================
 // Events
 // =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 using CampusServicePortal.Modules.Events.Repositories;
 using CampusServicePortal.Modules.Events.Services;
 
@@ -33,6 +34,10 @@ using CampusServicePortal.Modules.Gym.Services;
 // =========================================================
 using CampusServicePortal.Modules.Hostels.Repositories;
 using CampusServicePortal.Modules.Hostels.Services;
+
+// =========================================================
+// Identity
+// =========================================================
 using CampusServicePortal.Modules.Identity.Interfaces.Repository;
 using CampusServicePortal.Modules.Identity.Interfaces.Service;
 
@@ -96,7 +101,7 @@ using CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Repository
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Service;
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Repositories;
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Services;
-using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
+
 
 // =========================================================
 // Identity / Audit Logs
@@ -226,7 +231,6 @@ builder.Services.AddScoped<ICertificatesService, CertificatesService>();
 builder.Services.AddScoped<IComplaintCategoryRepository, ComplaintCategoryRepository>();
 builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
 builder.Services.AddScoped<IComplaintStatusHistoryRepository, ComplaintStatusHistoryRepository>();
-
 builder.Services.AddScoped<IComplaintsService, ComplaintsService>();
 
 // =========================================================
@@ -309,6 +313,12 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+builder.Services.AddScoped<IDepartmentStaffAssignmentRepository, DepartmentStaffAssignmentRepository>();
+builder.Services.AddScoped<IHostelStaffAssignmentRepository, HostelStaffAssignmentRepository>();
+builder.Services.AddScoped<ICanteenStaffAssignmentRepository, CanteenStaffAssignmentRepository>();
 
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 
