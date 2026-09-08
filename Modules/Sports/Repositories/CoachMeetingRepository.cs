@@ -1,38 +1,62 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Sports.Repositories;
 
 public class CoachMeetingRepository : ICoachMeetingRepository
 {
-    public Task<CoachMeeting?> GetByIdAsync(int coachMeetingId)
+    private readonly CampusDbContext _context;
+
+    public CoachMeetingRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<CoachMeeting>> GetAllAsync()
+    public async Task<CoachMeeting?> GetByIdAsync(int coachMeetingId)
     {
-        throw new NotImplementedException();
+        return await _context.CoachMeetings
+            .FirstOrDefaultAsync(x =>
+                x.CoachMeetingId == coachMeetingId);
     }
 
-    public Task<IEnumerable<CoachMeeting>> GetBySportsEventIdAsync(
-        int sportsEventId)
+    public async Task<IEnumerable<CoachMeeting>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.CoachMeetings
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task AddAsync(CoachMeeting coachMeeting)
+    public async Task<IEnumerable<CoachMeeting>>
+        GetBySportsEventIdAsync(int sportsEventId)
     {
-        throw new NotImplementedException();
+        return await _context.CoachMeetings
+            .AsNoTracking()
+            .Where(x => x.SportsEventId == sportsEventId)
+            .ToListAsync();
     }
 
-    public Task UpdateAsync(CoachMeeting coachMeeting)
+    public async Task AddAsync(CoachMeeting coachMeeting)
     {
-        throw new NotImplementedException();
+        await _context.CoachMeetings
+            .AddAsync(coachMeeting);
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int coachMeetingId)
+    public async Task UpdateAsync(CoachMeeting coachMeeting)
     {
-        throw new NotImplementedException();
+        _context.CoachMeetings
+            .Update(coachMeeting);
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ExistsAsync(int coachMeetingId)
+    {
+        return await _context.CoachMeetings
+            .AnyAsync(x =>
+                x.CoachMeetingId == coachMeetingId);
     }
 }

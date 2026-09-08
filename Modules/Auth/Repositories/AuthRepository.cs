@@ -1,32 +1,46 @@
 ﻿using CampusServicePortal.Modules.Identity.Entities;
+using CampusServicePortal_TicUnicorns.Data;
 using CampusServicePortal_TicUnicorns.Modules.Auth.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Auth.Repositories;
 
 public class AuthRepository : IAuthRepository
 {
-    public Task<User?> GetUserByUsernameAsync(string username)
+    private readonly CampusDbContext _context;
+
+    public AuthRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<User?> GetUserByIdAsync(int userId)
+    public async Task<User?> GetUserByUsernameAsync(string username)
     {
-        throw new NotImplementedException();
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.Username == username);
     }
 
-    public Task UpdateUserAsync(User user)
+    public async Task<User?> GetUserByIdAsync(int userId)
     {
-        throw new NotImplementedException();
+        return await _context.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId);
     }
 
-    public Task<bool> UserExistsAsync(int userId)
+    public async Task UpdateUserAsync(User user)
     {
-        throw new NotImplementedException();
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> UsernameExistsAsync(string username)
+    public async Task<bool> UserExistsAsync(int userId)
     {
-        throw new NotImplementedException();
+        return await _context.Users
+            .AnyAsync(u => u.UserId == userId);
+    }
+
+    public async Task<bool> UsernameExistsAsync(string username)
+    {
+        return await _context.Users
+            .AnyAsync(u => u.Username == username);
     }
 }

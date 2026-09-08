@@ -1,42 +1,72 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Sports.Repositories;
 
 public class SportsEventDepartmentLimitRepository
     : ISportsEventDepartmentLimitRepository
 {
-    public Task<SportsEventDepartmentLimit?> GetByIdAsync(
+    private readonly CampusDbContext _context;
+
+    public SportsEventDepartmentLimitRepository(CampusDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<SportsEventDepartmentLimit?> GetByIdAsync(
         int sportsEventDepartmentLimitId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsEventDepartmentLimits
+            .FirstOrDefaultAsync(x =>
+                x.SportsEventDepartmentLimitId ==
+                sportsEventDepartmentLimitId);
     }
 
-    public Task<IEnumerable<SportsEventDepartmentLimit>>
+    public async Task<IEnumerable<SportsEventDepartmentLimit>>
         GetBySportsEventIdAsync(int sportsEventId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsEventDepartmentLimits
+            .AsNoTracking()
+            .Where(x => x.SportsEventId == sportsEventId)
+            .ToListAsync();
     }
 
-    public Task AddAsync(SportsEventDepartmentLimit departmentLimit)
+    public async Task AddAsync(
+        SportsEventDepartmentLimit departmentLimit)
     {
-        throw new NotImplementedException();
+        await _context.SportsEventDepartmentLimits
+            .AddAsync(departmentLimit);
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task UpdateAsync(SportsEventDepartmentLimit departmentLimit)
+    public async Task UpdateAsync(
+        SportsEventDepartmentLimit departmentLimit)
     {
-        throw new NotImplementedException();
+        _context.SportsEventDepartmentLimits
+            .Update(departmentLimit);
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int sportsEventDepartmentLimitId)
+    public async Task<bool> ExistsAsync(
+        int sportsEventDepartmentLimitId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsEventDepartmentLimits
+            .AnyAsync(x =>
+                x.SportsEventDepartmentLimitId ==
+                sportsEventDepartmentLimitId);
     }
 
-    public Task<bool> ExistsByEventAndDepartmentAsync(
+    public async Task<bool> ExistsByEventAndDepartmentAsync(
         int sportsEventId,
         int departmentId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsEventDepartmentLimits
+            .AnyAsync(x =>
+                x.SportsEventId == sportsEventId &&
+                x.DepartmentId == departmentId);
     }
 }

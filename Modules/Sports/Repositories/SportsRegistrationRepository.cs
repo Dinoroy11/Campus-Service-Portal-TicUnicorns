@@ -1,60 +1,105 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+﻿using CampusServicePortal_TicUnicorns.Data;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Enums;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Sports.Repositories;
 
-public class SportsRegistrationRepository
-    : ISportsRegistrationRepository
+public class SportsRegistrationRepository : ISportsRegistrationRepository
 {
-    public Task<SportsRegistration?> GetByIdAsync(
+    private readonly CampusDbContext _context;
+
+    public SportsRegistrationRepository(CampusDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<SportsRegistration?> GetByIdAsync(
         int sportsRegistrationId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .FirstOrDefaultAsync(x =>
+                x.SportsRegistrationId == sportsRegistrationId);
     }
 
-    public Task<IEnumerable<SportsRegistration>> GetAllAsync()
+    public async Task<IEnumerable<SportsRegistration>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task<IEnumerable<SportsRegistration>>
+    public async Task<IEnumerable<SportsRegistration>>
         GetBySportsEventIdAsync(int sportsEventId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .AsNoTracking()
+            .Where(x => x.SportsEventId == sportsEventId)
+            .ToListAsync();
     }
 
-    public Task<IEnumerable<SportsRegistration>>
+    public async Task<IEnumerable<SportsRegistration>>
         GetByStudentIdAsync(int studentId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .AsNoTracking()
+            .Where(x => x.StudentId == studentId)
+            .ToListAsync();
     }
 
-    public Task AddAsync(SportsRegistration registration)
+    public async Task AddAsync(SportsRegistration registration)
     {
-        throw new NotImplementedException();
+        await _context.SportsRegistrations
+            .AddAsync(registration);
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task UpdateAsync(SportsRegistration registration)
+    public async Task UpdateAsync(SportsRegistration registration)
     {
-        throw new NotImplementedException();
+        _context.SportsRegistrations
+            .Update(registration);
+
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int sportsRegistrationId)
+    public async Task<bool> ExistsAsync(int sportsRegistrationId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .AnyAsync(x =>
+                x.SportsRegistrationId == sportsRegistrationId);
     }
 
-    public Task<bool> ExistsByEventAndStudentAsync(
+    public async Task<bool> ExistsByEventAndStudentAsync(
         int sportsEventId,
         int studentId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .AnyAsync(x =>
+                x.SportsEventId == sportsEventId &&
+                x.StudentId == studentId);
     }
 
-    public Task<int> CountByEventAndStudentDepartmentAsync(
+    public async Task<int> CountByEventAndStudentDepartmentAsync(
         int sportsEventId,
         int departmentId)
     {
-        throw new NotImplementedException();
+        return await _context.SportsRegistrations
+            .Where(x =>
+                x.SportsEventId == sportsEventId &&
+                x.Status != SportsRegistrationStatus.Cancelled)
+            .Join(
+                _context.Students,
+                registration => registration.StudentId,
+                student => student.StudentId,
+                (registration, student) => student)
+            .Join(
+                _context.StudentMasterLists,
+                student => student.MasterStudentId,
+                master => master.MasterStudentId,
+                (student, master) => master)
+            .CountAsync(master =>
+                master.DepartmentId == departmentId);
     }
 }
