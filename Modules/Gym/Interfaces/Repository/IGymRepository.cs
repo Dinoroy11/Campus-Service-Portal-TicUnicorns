@@ -1,4 +1,5 @@
-﻿using GymEntity = CampusServicePortal.Modules.Gym.Entities.Gym;
+﻿
+using GymEntity = CampusServicePortal.Modules.Gym.Entities.Gym;
 
 namespace CampusServicePortal.Modules.Gym.Interfaces.Repository
 {
