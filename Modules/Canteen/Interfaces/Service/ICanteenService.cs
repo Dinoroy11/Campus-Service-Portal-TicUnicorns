@@ -1,26 +1,60 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
+﻿
+using CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Enums;
 
+namespace CampusServicePortal_TicUnicorns.Modules.Canteen.Services.Interfaces;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Canteens.Interfaces.Service
+public interface ICanteenService
 {
-    public interface ICanteenService
-    {
-        Task<IEnumerable<CanteenResponseDto>> GetAllAsync();
+    // =========================================================
+    // Meal Packages
+    // =========================================================
 
-        Task<CanteenResponseDto?> GetByIdAsync(int canteenId);
+    Task<List<MealPackageResponseDto>> GetActivePackagesAsync();
 
-        Task<IEnumerable<CanteenResponseDto>> GetByStudentIdAsync(int studentId);
+    Task<MealPackageResponseDto> CreatePackageAsync(
+        CreateMealPackageDto dto);
 
-        Task<CanteenResponseDto> CreateAsync(CreateCanteenDto dto);
 
-        Task<CanteenResponseDto?> UpdateAsync(
-            int canteenId,
-            UpdateCanteenDto dto);
+    // =========================================================
+    // Meal Subscription
+    // =========================================================
 
-        Task<CanteenResponseDto?> UpdateStatusAsync(
-            int canteenId,
-            UpdateCanteenStatusDto dto);
+    Task<MealSubscriptionResponseDto> CreateSubscriptionAsync(
+        CreateMealSubscriptionDto dto);
 
-        Task<bool> DeleteAsync(int canteenId);
-    }
+    Task<MealSubscriptionResponseDto?>
+        GetActiveSubscriptionAsync(int studentId);
+
+    Task<List<MealSubscriptionResponseDto>>
+        GetStudentSubscriptionsAsync(int studentId);
+
+
+    // =========================================================
+    // Absence
+    // =========================================================
+
+    Task ReportAbsenceAsync(
+        ReportMealAbsenceDto dto);
+
+    Task<List<MealAbsence>> GetAbsencesAsync(
+        int mealSubscriptionId);
+
+
+    // =========================================================
+    // Meal Usage
+    // =========================================================
+
+    Task<List<MealUsageResponseDto>>
+        GetStudentMealUsageAsync(
+            int studentId,
+            DateTime? fromDate = null,
+            DateTime? toDate = null);
+
+    Task<MealUsageResponseDto>
+        CollectMealAsync(
+            int mealSubscriptionId,
+            DateTime mealDate,
+            MealType mealType);
 }

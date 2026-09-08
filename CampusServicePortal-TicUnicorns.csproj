@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -30,7 +30,6 @@
 
 	<ItemGroup>
 		<Folder Include="Common\" />
-		<Folder Include="Data\" />
 		<Folder Include="Modules\Identity\" />
 		<Folder Include="Modules\Hostels\" />
 		<Folder Include="Modules\Labs\" />
@@ -39,7 +38,6 @@
 		<Folder Include="Modules\Certificates\" />
 		<Folder Include="Modules\Complaints\" />
 		<Folder Include="Modules\DashBoards\" />
-		<Folder Include="Modules\Canteens\" />
 		<Folder Include="Modules\Laundry\" />
 		<Folder Include="Modules\Gym\" />
 		<Folder Include="Modules\Leave\" />

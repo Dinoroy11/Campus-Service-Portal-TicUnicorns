@@ -1,49 +1,46 @@
-﻿using Microsoft.EntityFrameworkCore;
-
+﻿// =========================================================
+// Gym
 // =========================================================
-// Identity
-// =========================================================
-using CampusServicePortal.Modules.Identity.Entities;
-
+using CampusServicePortal.Modules.Gym.Entities;
 // =========================================================
 // Hostels
 // =========================================================
 using CampusServicePortal.Modules.Hostels.Entities;
-
 // =========================================================
-// Gym
+// Identity
 // =========================================================
-using CampusServicePortal.Modules.Gym.Entities;
-
+using CampusServicePortal.Modules.Identity.Entities;
 // =========================================================
 // Leave
 // =========================================================
 using CampusServicePortal.Modules.Leave.Entities;
-
 // =========================================================
 // Notifications
 // =========================================================
 using CampusServicePortal.Modules.Notifications.Entities;
-
 // =========================================================
 // System Settings
 // =========================================================
 using CampusServicePortal.Modules.SystemSettings.Entities;
 
+
+// =========================================================
+// Canteens
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
 // =========================================================
 // Certificates
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
-
 // =========================================================
 // Complaints
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Complaints.Entities;
-
 // =========================================================
 // Laundry
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace CampusServicePortal_TicUnicorns.Data;
@@ -135,6 +132,17 @@ public class CampusDbContext : DbContext
     // =========================================================
 
     public DbSet<SystemSetting> SystemSettings { get; set; }
+
+
+
+    // =========================================================
+    // CANTEENS
+    // =========================================================
+
+    public DbSet<MealPackage> MealPackages { get; set; }
+    public DbSet<MealSubscription> MealSubscriptions { get; set; }
+    public DbSet<MealAbsence> MealAbsences { get; set; }
+    public DbSet<MealUsage> MealUsages { get; set; }
 
 
     // =========================================================

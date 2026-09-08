@@ -1,99 +1,255 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
-using CampusServicePortal_TicUnicorns.Modules.Canteens.Interfaces.Service;
-using Microsoft.AspNetCore.Http;
+﻿
+using CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Enums;
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Canteen.Controllers
+namespace CampusServicePortal_TicUnicorns.Modules.Canteen.Controllers;
+
+[ApiController]
+[Route("api/canteen")]
+public class CanteenController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CanteenController : ControllerBase
+    private readonly ICanteenService _canteenService;
+
+    public CanteenController(ICanteenService canteenService)
     {
-        private readonly ICanteenService _service;
+        _canteenService = canteenService;
+    }
 
-        public CanteenController(ICanteenService service)
+
+    // =========================================================
+    // MEAL PACKAGES
+    // =========================================================
+
+    // GET: api/canteen/packages
+    [HttpGet("packages")]
+    public async Task<IActionResult> GetPackages()
+    {
+        var packages =
+            await _canteenService.GetActivePackagesAsync();
+
+        return Ok(packages);
+    }
+
+
+    // POST: api/canteen/packages
+    [HttpPost("packages")]
+    public async Task<IActionResult> CreatePackage(
+        [FromBody] CreateMealPackageDto dto)
+    {
+        try
         {
-            _service = service;
-        }
+            var result =
+                await _canteenService.CreatePackageAsync(dto);
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var result = await _service.GetAllAsync();
-
-            return Ok(result);
-        }
-
-        [HttpGet("{canteenId}")]
-        public async Task<IActionResult> GetById(int canteenId)
-        {
-            var result = await _service.GetByIdAsync(canteenId);
-
-            if (result == null)
-                return NotFound();
-
-            return Ok(result);
-        }
-
-        [HttpGet("student/{studentId}")]
-        public async Task<IActionResult> GetByStudentId(int studentId)
-        {
-            var result = await _service.GetByStudentIdAsync(studentId);
-
-            return Ok(result);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create(
-            CreateCanteenDto dto)
-        {
-            var result = await _service.CreateAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetById),
-                new { canteenId = result.CanteenId },
+            return Created(
+                $"api/canteen/packages/{result.MealPackageId}",
                 result);
         }
-
-        [HttpPut("{canteenId}")]
-        public async Task<IActionResult> Update(
-            int canteenId,
-            UpdateCanteenDto dto)
+        catch (ArgumentException ex)
         {
-            var result = await _service.UpdateAsync(
-                canteenId,
-                dto);
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
 
-            if (result == null)
-                return NotFound();
+
+    // =========================================================
+    // SUBSCRIPTIONS
+    // =========================================================
+
+    // POST: api/canteen/subscriptions
+    [HttpPost("subscriptions")]
+    public async Task<IActionResult> CreateSubscription(
+        [FromBody] CreateMealSubscriptionDto dto)
+    {
+        try
+        {
+            var result =
+                await _canteenService
+                    .CreateSubscriptionAsync(dto);
+
+            return Created(
+                $"api/canteen/subscriptions/{result.MealSubscriptionId}",
+                result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+
+    // GET: api/canteen/students/10/subscription
+    [HttpGet("students/{studentId:int}/subscription")]
+    public async Task<IActionResult> GetActiveSubscription(
+        int studentId)
+    {
+        var result =
+            await _canteenService
+                .GetActiveSubscriptionAsync(studentId);
+
+        if (result == null)
+        {
+            return NotFound(new
+            {
+                message =
+                    "No active meal subscription found for this student."
+            });
+        }
+
+        return Ok(result);
+    }
+
+
+    // GET: api/canteen/students/10/subscriptions
+    [HttpGet("students/{studentId:int}/subscriptions")]
+    public async Task<IActionResult> GetStudentSubscriptions(
+        int studentId)
+    {
+        var result =
+            await _canteenService
+                .GetStudentSubscriptionsAsync(studentId);
+
+        return Ok(result);
+    }
+
+
+    // =========================================================
+    // ABSENCE
+    // =========================================================
+
+    // POST: api/canteen/absences
+    [HttpPost("absences")]
+    public async Task<IActionResult> ReportAbsence(
+        [FromBody] ReportMealAbsenceDto dto)
+    {
+        try
+        {
+            await _canteenService.ReportAbsenceAsync(dto);
+
+            return Ok(new
+            {
+                message =
+                    "Meal absence reported successfully."
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+
+    // GET: api/canteen/subscriptions/5/absences
+    [HttpGet("subscriptions/{mealSubscriptionId:int}/absences")]
+    public async Task<IActionResult> GetAbsences(
+        int mealSubscriptionId)
+    {
+        var result =
+            await _canteenService
+                .GetAbsencesAsync(mealSubscriptionId);
+
+        return Ok(result);
+    }
+
+
+    // =========================================================
+    // MEAL USAGE
+    // =========================================================
+
+    // GET: api/canteen/students/10/usage
+    [HttpGet("students/{studentId:int}/usage")]
+    public async Task<IActionResult> GetStudentMealUsage(
+        int studentId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate)
+    {
+        var result =
+            await _canteenService
+                .GetStudentMealUsageAsync(
+                    studentId,
+                    fromDate,
+                    toDate);
+
+        return Ok(result);
+    }
+
+
+    // PUT: api/canteen/usage/collect
+    [HttpPut("usage/collect")]
+    public async Task<IActionResult> CollectMeal(
+        [FromQuery] int mealSubscriptionId,
+        [FromQuery] DateTime mealDate,
+        [FromQuery] MealType mealType)
+    {
+        try
+        {
+            var result =
+                await _canteenService.CollectMealAsync(
+                    mealSubscriptionId,
+                    mealDate,
+                    mealType);
 
             return Ok(result);
         }
-
-        [HttpPut("{canteenId}/status")]
-        public async Task<IActionResult> UpdateStatus(
-            int canteenId,
-            UpdateCanteenStatusDto dto)
+        catch (ArgumentException ex)
         {
-            var result = await _service.UpdateStatusAsync(
-                canteenId,
-                dto);
-
-            if (result == null)
-                return NotFound();
-
-            return Ok(result);
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
         }
-
-        [HttpDelete("{canteenId}")]
-        public async Task<IActionResult> Delete(int canteenId)
+        catch (InvalidOperationException ex)
         {
-            var deleted = await _service.DeleteAsync(canteenId);
-
-            if (!deleted)
-                return NotFound();
-
-            return NoContent();
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
         }
     }
 }
