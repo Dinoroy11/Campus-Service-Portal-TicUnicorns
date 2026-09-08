@@ -1,4 +1,5 @@
 ﻿using CampusServicePortal.Modules.Events.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -7,8 +8,7 @@ namespace CampusServicePortal_TicUnicorns.Data.Configurations;
 public class EventRegistrationConfiguration
     : IEntityTypeConfiguration<EventRegistration>
 {
-    public void Configure(
-        EntityTypeBuilder<EventRegistration> builder)
+    public void Configure(EntityTypeBuilder<EventRegistration> builder)
     {
         builder.ToTable("EventRegistrations");
 
@@ -35,10 +35,22 @@ public class EventRegistrationConfiguration
         builder.Property(x => x.RegisteredAt)
             .IsRequired();
 
-        builder.HasIndex(x => x.EventId);
+        builder.HasOne<Event>()
+            .WithMany()
+            .HasForeignKey(x => x.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => x.StudentId);
+        builder.HasOne<Student>()
+            .WithMany()
+            .HasForeignKey(x => x.StudentId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(x => x.EventSeatId);
+        builder.HasOne<EventSeat>()
+            .WithMany()
+            .HasForeignKey(x => x.EventSeatId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => new { x.EventId, x.StudentId })
+            .IsUnique();
     }
 }
