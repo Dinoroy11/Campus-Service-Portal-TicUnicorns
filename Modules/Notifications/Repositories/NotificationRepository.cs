@@ -1,68 +1,75 @@
 ﻿using CampusServicePortal.Modules.Notifications.Entities;
 using CampusServicePortal.Modules.Notifications.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal.Modules.Notifications.Repositories
 {
     public class NotificationRepository : INotificationRepository
     {
-        private readonly List<Notification> _notifications = new();
+        private readonly CampusDbContext _context;
 
-        public Task<IEnumerable<Notification>> GetByUserIdAsync(int userId)
+        public NotificationRepository(CampusDbContext context)
         {
-            var notifications = _notifications
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.CreatedAt)
-                .ToList();
-
-            return Task.FromResult<IEnumerable<Notification>>(notifications);
+            _context = context;
         }
 
-        public Task<Notification?> GetByIdAsync(int notificationId)
+        public async Task<IEnumerable<Notification>> GetByUserIdAsync(int userId)
         {
-            var notification = _notifications
-                .FirstOrDefault(x => x.NotificationId == notificationId);
-
-            return Task.FromResult(notification);
+            return await _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
         }
 
-        public Task<Notification> CreateAsync(Notification notification)
+        public async Task<Notification?> GetByIdAsync(int notificationId)
         {
-            notification.NotificationId = _notifications.Count + 1;
+            return await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NotificationId == notificationId);
+        }
+
+        public async Task<Notification> CreateAsync(Notification notification)
+        {
             notification.CreatedAt = DateTime.UtcNow;
 
-            _notifications.Add(notification);
+            await _context.Notifications.AddAsync(notification);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(notification);
+            return notification;
         }
 
-        public Task<bool> MarkAsReadAsync(int notificationId)
+        public async Task<bool> MarkAsReadAsync(int notificationId)
         {
-            var notification = _notifications
-                .FirstOrDefault(x => x.NotificationId == notificationId);
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NotificationId == notificationId);
 
             if (notification == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
             notification.IsRead = true;
 
-            return Task.FromResult(true);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<bool> DeleteAsync(int notificationId)
+        public async Task<bool> DeleteAsync(int notificationId)
         {
-            var notification = _notifications
-                .FirstOrDefault(x => x.NotificationId == notificationId);
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NotificationId == notificationId);
 
             if (notification == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            _notifications.Remove(notification);
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(true);
+            return true;
         }
     }
 }

@@ -1,54 +1,58 @@
 ﻿using CampusServicePortal.Modules.SystemSettings.Entities;
 using CampusServicePortal.Modules.SystemSettings.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal.Modules.SystemSettings.Repositories
 {
     public class SystemSettingRepository : ISystemSettingRepository
     {
-        private readonly List<SystemSetting> _settings = new();
+        private readonly CampusDbContext _context;
 
-        public Task<IEnumerable<SystemSetting>> GetAllSystemSettingsAsync()
+        public SystemSettingRepository(CampusDbContext context)
         {
-            return Task.FromResult<IEnumerable<SystemSetting>>(_settings);
+            _context = context;
         }
 
-        public Task<SystemSetting?> GetSystemSettingByIdAsync(int settingId)
+        public async Task<IEnumerable<SystemSetting>> GetAllSystemSettingsAsync()
         {
-            var setting = _settings
-                .FirstOrDefault(x => x.SettingId == settingId);
-
-            return Task.FromResult(setting);
+            return await _context.SystemSettings
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public Task<SystemSetting?> GetSystemSettingByKeyAsync(string key)
+        public async Task<SystemSetting?> GetSystemSettingByIdAsync(int settingId)
         {
-            var setting = _settings
-                .FirstOrDefault(x =>
-                    x.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
-
-            return Task.FromResult(setting);
+            return await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.SettingId == settingId);
         }
 
-        public Task<SystemSetting> CreateSystemSettingAsync(
+        public async Task<SystemSetting?> GetSystemSettingByKeyAsync(string key)
+        {
+            return await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.Key == key);
+        }
+
+        public async Task<SystemSetting> CreateSystemSettingAsync(
             SystemSetting setting)
         {
-            setting.SettingId = _settings.Count + 1;
             setting.IsActive = true;
 
-            _settings.Add(setting);
+            await _context.SystemSettings.AddAsync(setting);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(setting);
+            return setting;
         }
 
-        public Task<SystemSetting?> UpdateSystemSettingAsync(
+        public async Task<SystemSetting?> UpdateSystemSettingAsync(
             SystemSetting setting)
         {
-            var existingSetting = _settings
-                .FirstOrDefault(x => x.SettingId == setting.SettingId);
+            var existingSetting = await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.SettingId == setting.SettingId);
 
             if (existingSetting == null)
             {
-                return Task.FromResult<SystemSetting?>(null);
+                return null;
             }
 
             existingSetting.Key = setting.Key;
@@ -56,22 +60,25 @@ namespace CampusServicePortal.Modules.SystemSettings.Repositories
             existingSetting.Description = setting.Description;
             existingSetting.IsActive = setting.IsActive;
 
-            return Task.FromResult<SystemSetting?>(existingSetting);
+            await _context.SaveChangesAsync();
+
+            return existingSetting;
         }
 
-        public Task<bool> DeleteSystemSettingAsync(int settingId)
+        public async Task<bool> DeleteSystemSettingAsync(int settingId)
         {
-            var setting = _settings
-                .FirstOrDefault(x => x.SettingId == settingId);
+            var setting = await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.SettingId == settingId);
 
             if (setting == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
 
-            _settings.Remove(setting);
+            _context.SystemSettings.Remove(setting);
+            await _context.SaveChangesAsync();
 
-            return Task.FromResult(true);
+            return true;
         }
     }
 }

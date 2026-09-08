@@ -1,38 +1,53 @@
 ﻿using CampusServicePortal.Modules.Identity.Entities;
 using CampusServicePortal.Modules.Identity.Interfaces.Repository;
-
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Identity.Repositories;
 
 public class RoleRepository : IRoleRepository
 {
-    public Task<Role?> GetByIdAsync(int roleId)
+    private readonly CampusDbContext _context;
+
+    public RoleRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<IEnumerable<Role>> GetAllAsync()
+    public async Task<Role?> GetByIdAsync(int roleId)
     {
-        throw new NotImplementedException();
+        return await _context.Roles
+            .FirstOrDefaultAsync(r => r.RoleId == roleId);
     }
 
-    public Task AddAsync(Role role)
+    public async Task<IEnumerable<Role>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.Roles
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task UpdateAsync(Role role)
+    public async Task AddAsync(Role role)
     {
-        throw new NotImplementedException();
+        await _context.Roles.AddAsync(role);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int roleId)
+    public async Task UpdateAsync(Role role)
     {
-        throw new NotImplementedException();
+        _context.Roles.Update(role);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsByNameAsync(string roleName)
+    public async Task<bool> ExistsAsync(int roleId)
     {
-        throw new NotImplementedException();
+        return await _context.Roles
+            .AnyAsync(r => r.RoleId == roleId);
+    }
+
+    public async Task<bool> ExistsByNameAsync(string roleName)
+    {
+        return await _context.Roles
+            .AnyAsync(r => r.RoleName == roleName);
     }
 }

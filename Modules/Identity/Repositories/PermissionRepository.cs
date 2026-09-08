@@ -1,43 +1,59 @@
 ﻿using CampusServicePortal.Modules.Identity.Entities;
 using CampusServicePortal.Modules.Identity.Interfaces.Repository;
-
+using CampusServicePortal_TicUnicorns.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Identity.Repositories;
 
 public class PermissionRepository : IPermissionRepository
 {
-    public Task<Permission?> GetByIdAsync(int permissionId)
+    private readonly CampusDbContext _context;
+
+    public PermissionRepository(CampusDbContext context)
     {
-        throw new NotImplementedException();
+        _context = context;
     }
 
-    public Task<Permission?> GetByCodeAsync(string code)
+    public async Task<Permission?> GetByIdAsync(int permissionId)
     {
-        throw new NotImplementedException();
+        return await _context.Permissions
+            .FirstOrDefaultAsync(p => p.PermissionId == permissionId);
     }
 
-    public Task<IEnumerable<Permission>> GetAllAsync()
+    public async Task<Permission?> GetByCodeAsync(string code)
     {
-        throw new NotImplementedException();
+        return await _context.Permissions
+            .FirstOrDefaultAsync(p => p.Code == code);
     }
 
-    public Task AddAsync(Permission permission)
+    public async Task<IEnumerable<Permission>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return await _context.Permissions
+            .AsNoTracking()
+            .ToListAsync();
     }
 
-    public Task UpdateAsync(Permission permission)
+    public async Task AddAsync(Permission permission)
     {
-        throw new NotImplementedException();
+        await _context.Permissions.AddAsync(permission);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsAsync(int permissionId)
+    public async Task UpdateAsync(Permission permission)
     {
-        throw new NotImplementedException();
+        _context.Permissions.Update(permission);
+        await _context.SaveChangesAsync();
     }
 
-    public Task<bool> ExistsByCodeAsync(string code)
+    public async Task<bool> ExistsAsync(int permissionId)
     {
-        throw new NotImplementedException();
+        return await _context.Permissions
+            .AnyAsync(p => p.PermissionId == permissionId);
+    }
+
+    public async Task<bool> ExistsByCodeAsync(string code)
+    {
+        return await _context.Permissions
+            .AnyAsync(p => p.Code == code);
     }
 }
