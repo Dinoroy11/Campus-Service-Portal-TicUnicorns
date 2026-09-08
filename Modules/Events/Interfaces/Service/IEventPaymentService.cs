@@ -1,7 +1,6 @@
 ﻿using CampusServicePortal.Modules.Events.DTOs;
- 
 
-namespace CampusServicePortal.Modules.Events.Services;
+namespace CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 
 public interface IEventPaymentService
 {
@@ -13,5 +12,7 @@ public interface IEventPaymentService
 
     Task<EventPaymentDto> CreateAsync(EventPaymentDto dto);
 
-    Task<bool> UpdateAsync(int eventPaymentId, EventPaymentDto dto);
+    Task<bool> UpdateAsync(
+        int eventPaymentId,
+        EventPaymentDto dto);
 }

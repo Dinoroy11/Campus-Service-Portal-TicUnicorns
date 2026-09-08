@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace CampusServicePortal_TicUnicorns.Data.Configurations;
 
-public class FeePaymentConfiguration
-    : IEntityTypeConfiguration<FeePayment>
+public class FeePaymentConfiguration : IEntityTypeConfiguration<FeePayment>
 {
     public void Configure(EntityTypeBuilder<FeePayment> builder)
     {
@@ -17,6 +16,7 @@ public class FeePaymentConfiguration
             .HasColumnType("decimal(18,2)");
 
         builder.Property(x => x.PaymentStatus)
+            .HasConversion<string>()
             .IsRequired()
             .HasMaxLength(50);
 

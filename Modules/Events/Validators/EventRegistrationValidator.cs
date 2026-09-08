@@ -1,9 +1,11 @@
 ﻿using CampusServicePortal.Modules.Events.DTOs;
+using CampusServicePortal.Modules.Events.Enums;
 using FluentValidation;
 
 namespace CampusServicePortal.Modules.Events.Validators;
 
-public class EventRegistrationValidator : AbstractValidator<EventRegistrationDto>
+public class EventRegistrationValidator
+    : AbstractValidator<EventRegistrationDto>
 {
     public EventRegistrationValidator()
     {
@@ -15,24 +17,13 @@ public class EventRegistrationValidator : AbstractValidator<EventRegistrationDto
             .GreaterThan(0)
             .WithMessage("Student is required.");
 
-        RuleFor(x => x.EventSeatId)
-            .GreaterThan(0)
-            .When(x => x.EventSeatId.HasValue)
-            .WithMessage("Event seat must be greater than zero.");
-
         RuleFor(x => x.Status)
-            .NotEmpty()
-            .WithMessage("Registration status is required.")
-            .MaximumLength(30)
-            .WithMessage("Registration status cannot exceed 30 characters.");
+            .IsInEnum()
+            .WithMessage("Invalid registration status.");
 
         RuleFor(x => x.RegisteredAt)
             .NotEmpty()
-            .WithMessage("Registration date and time is required.");
-
-        RuleFor(x => x.ExpiresAt)
-            .GreaterThan(x => x.HeldAt)
-            .When(x => x.HeldAt.HasValue && x.ExpiresAt.HasValue)
-            .WithMessage("Expiration time must be after the hold time.");
+            .WithMessage(
+                "Registration date and time is required.");
     }
 }

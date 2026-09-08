@@ -2,6 +2,7 @@
 using CampusServicePortal.Modules.Fees.Entities;
 using CampusServicePortal.Modules.Fees.Interfaces.Repository;
 using CampusServicePortal.Modules.Fees.Interfaces.Service;
+using CampusServicePortal_TicUnicorns.Modules.Fees.Enums;
 
 namespace CampusServicePortal.Modules.Fees.Services;
 
@@ -32,7 +33,9 @@ public class FeesService : IFeesService
     {
         var feeTypes = await _feeTypeRepository.GetAllAsync();
 
-        return feeTypes.Select(MapFeeTypeToDto).ToList();
+        return feeTypes
+            .Select(MapFeeTypeToDto)
+            .ToList();
     }
 
     public async Task<FeeTypeDto?> GetFeeTypeByIdAsync(int feeTypeId)
@@ -135,7 +138,10 @@ public class FeesService : IFeesService
             FeeTypeId = dto.FeeTypeId,
             Amount = dto.Amount,
             DueDate = dto.DueDate,
-            Status = "Outstanding",
+
+            // Enum value instead of string
+            Status = StudentFeeStatus.Outstanding,
+
             ExamReference = dto.ExamReference,
             CreatedAt = DateTime.UtcNow
         };
@@ -158,9 +164,7 @@ public class FeesService : IFeesService
                 "Student fee not found.");
 
         // Paid fee cannot be edited.
-        if (studentFee.Status.Equals(
-                "Paid",
-                StringComparison.OrdinalIgnoreCase))
+        if (studentFee.Status == StudentFeeStatus.Paid)
         {
             throw new InvalidOperationException(
                 "Paid fee cannot be edited.");
@@ -242,11 +246,24 @@ public class FeesService : IFeesService
             throw new InvalidOperationException(
                 "This fee has already been paid.");
 
+        // Convert DTO string to enum.
+        if (!Enum.TryParse<PaymentStatus>(
+                dto.PaymentStatus,
+                true,
+                out var paymentStatus))
+        {
+            throw new ArgumentException(
+                "Invalid payment status.");
+        }
+
         var payment = new FeePayment
         {
             StudentFeeId = dto.StudentFeeId,
             Amount = dto.Amount,
-            PaymentStatus = dto.PaymentStatus,
+
+            // Enum value
+            PaymentStatus = paymentStatus,
+
             PaymentReference = dto.PaymentReference,
             PaidAt = dto.PaidAt ?? DateTime.UtcNow,
             SourcePaymentId = dto.SourcePaymentId,
@@ -320,15 +337,29 @@ public class FeesService : IFeesService
             throw new InvalidOperationException(
                 "A refund request already exists for this payment.");
 
+        // Convert DTO string to enum.
+        if (!Enum.TryParse<RefundStatus>(
+                dto.Status,
+                true,
+                out var refundStatus))
+        {
+            throw new ArgumentException(
+                "Invalid refund status.");
+        }
+
         var refund = new RefundRequest
         {
             PaymentId = dto.PaymentId,
             Reason = dto.Reason,
             Amount = dto.Amount,
-            Status = dto.Status,
+
+            // Enum value
+            Status = refundStatus,
+
             RequestedAt = dto.RequestedAt == default
                 ? DateTime.UtcNow
                 : dto.RequestedAt,
+
             ReviewedByUserId = dto.ReviewedByUserId,
             ProcessedAt = dto.ProcessedAt
         };
@@ -353,7 +384,19 @@ public class FeesService : IFeesService
 
         refund.Reason = dto.Reason;
         refund.Amount = dto.Amount;
-        refund.Status = dto.Status;
+
+        // Convert DTO string to enum.
+        if (!Enum.TryParse<RefundStatus>(
+                dto.Status,
+                true,
+                out var refundStatus))
+        {
+            throw new ArgumentException(
+                "Invalid refund status.");
+        }
+
+        refund.Status = refundStatus;
+
         refund.ReviewedByUserId = dto.ReviewedByUserId;
         refund.ProcessedAt = dto.ProcessedAt;
 
@@ -389,7 +432,10 @@ public class FeesService : IFeesService
             FeeTypeId = studentFee.FeeTypeId,
             Amount = studentFee.Amount,
             DueDate = studentFee.DueDate,
-            Status = studentFee.Status,
+
+            // Enum to string
+            Status = studentFee.Status.ToString(),
+
             ExamReference = studentFee.ExamReference,
             CreatedAt = studentFee.CreatedAt
         };
@@ -403,7 +449,10 @@ public class FeesService : IFeesService
             FeePaymentId = payment.FeePaymentId,
             StudentFeeId = payment.StudentFeeId,
             Amount = payment.Amount,
-            PaymentStatus = payment.PaymentStatus,
+
+            // Enum to string
+            PaymentStatus = payment.PaymentStatus.ToString(),
+
             PaymentReference = payment.PaymentReference,
             PaidAt = payment.PaidAt,
             SourcePaymentId = payment.SourcePaymentId,
@@ -421,7 +470,10 @@ public class FeesService : IFeesService
             PaymentId = refund.PaymentId,
             Reason = refund.Reason,
             Amount = refund.Amount,
-            Status = refund.Status,
+
+            // Enum to string
+            Status = refund.Status.ToString(),
+
             RequestedAt = refund.RequestedAt,
             ReviewedByUserId = refund.ReviewedByUserId,
             ProcessedAt = refund.ProcessedAt

@@ -1,5 +1,5 @@
 ﻿using CampusServicePortal.Modules.Events.DTOs;
-using CampusServicePortal.Modules.Events.Services;
+using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal.Modules.Events.Controllers;

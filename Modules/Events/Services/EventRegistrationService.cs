@@ -1,5 +1,6 @@
 ﻿using CampusServicePortal.Modules.Events.DTOs;
 using CampusServicePortal.Modules.Events.Entities;
+using CampusServicePortal.Modules.Events.Enums;
 using CampusServicePortal.Modules.Events.Repositories;
 using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 
@@ -31,7 +32,8 @@ public class EventRegistrationService : IEventRegistrationService
 
     public async Task<List<EventRegistrationDto>> GetAllAsync()
     {
-        var registrations = await _registrationRepository.GetAllAsync();
+        var registrations =
+            await _registrationRepository.GetAllAsync();
 
         return registrations
             .Select(MapToDto)
@@ -42,7 +44,8 @@ public class EventRegistrationService : IEventRegistrationService
         int eventRegistrationId)
     {
         var registration =
-            await _registrationRepository.GetByIdAsync(eventRegistrationId);
+            await _registrationRepository.GetByIdAsync(
+                eventRegistrationId);
 
         if (registration == null)
             return null;
@@ -53,7 +56,8 @@ public class EventRegistrationService : IEventRegistrationService
     public async Task<List<EventRegistrationDto>> GetByEventIdAsync(
         int eventId)
     {
-        var eventEntity = await _eventRepository.GetByIdAsync(eventId);
+        var eventEntity =
+            await _eventRepository.GetByIdAsync(eventId);
 
         if (eventEntity == null)
             throw new ArgumentException("Event not found.");
@@ -96,12 +100,16 @@ public class EventRegistrationService : IEventRegistrationService
         var now = DateTime.UtcNow;
 
         if (now >= eventEntity.EndDateTime)
+        {
             throw new ArgumentException(
                 "Registration is closed because the event has ended.");
+        }
 
         if (now >= eventEntity.StartDateTime)
+        {
             throw new ArgumentException(
                 "Registration is closed because the event has started.");
+        }
 
         var studentRegistrations =
             await _registrationRepository.GetByStudentIdAsync(
@@ -117,7 +125,8 @@ public class EventRegistrationService : IEventRegistrationService
             .Where(IsActiveRegistration)
             .ToList();
 
-        if (activeRegistrations.Count >= MaxActiveRegistrationsPerStudent)
+        if (activeRegistrations.Count >=
+            MaxActiveRegistrationsPerStudent)
         {
             throw new ArgumentException(
                 $"A student can have a maximum of " +
@@ -159,7 +168,8 @@ public class EventRegistrationService : IEventRegistrationService
         }
 
         var seat =
-            await _seatRepository.GetByIdAsync(dto.EventSeatId.Value);
+            await _seatRepository.GetByIdAsync(
+                dto.EventSeatId.Value);
 
         if (seat == null)
             throw new ArgumentException("Selected seat not found.");
@@ -195,14 +205,15 @@ public class EventRegistrationService : IEventRegistrationService
             EventId = eventEntity.EventId,
             StudentId = dto.StudentId,
             EventSeatId = seat.EventSeatId,
-            Status = "Held",
+            Status = EventRegistrationStatus.Held,
             HeldAt = now,
             ExpiresAt = now.AddMinutes(holdMinutes),
             RegisteredAt = now
         };
 
         var created =
-            await _registrationRepository.CreateAsync(registration);
+            await _registrationRepository.CreateAsync(
+                registration);
 
         return MapToDto(created);
     }
@@ -218,10 +229,12 @@ public class EventRegistrationService : IEventRegistrationService
             await _registrationRepository.GetByEventIdAsync(
                 eventEntity.EventId);
 
-        var activeCount = registrations.Count(IsActiveRegistration);
+        var activeCount =
+            registrations.Count(IsActiveRegistration);
 
-        var venueCapacity = await GetVenueCapacityAsync(
-            eventEntity.VenueId);
+        var venueCapacity =
+            await GetVenueCapacityAsync(
+                eventEntity.VenueId);
 
         if (activeCount >= venueCapacity)
         {
@@ -234,14 +247,15 @@ public class EventRegistrationService : IEventRegistrationService
             EventId = eventEntity.EventId,
             StudentId = dto.StudentId,
             EventSeatId = null,
-            Status = "Registered",
+            Status = EventRegistrationStatus.Confirmed,
             HeldAt = null,
             ExpiresAt = null,
             RegisteredAt = now
         };
 
         var created =
-            await _registrationRepository.CreateAsync(registration);
+            await _registrationRepository.CreateAsync(
+                registration);
 
         return MapToDto(created);
     }
@@ -261,18 +275,24 @@ public class EventRegistrationService : IEventRegistrationService
         registration.HeldAt = dto.HeldAt;
         registration.ExpiresAt = dto.ExpiresAt;
 
-        await _registrationRepository.UpdateAsync(registration);
+        await _registrationRepository.UpdateAsync(
+            registration);
 
         return true;
     }
 
-    private async Task<int> GetVenueCapacityAsync(int venueId)
+    private async Task<int> GetVenueCapacityAsync(
+        int venueId)
     {
-        var capacity = await _venueRepository.GetCapacityAsync(venueId);
+        var capacity =
+            await _venueRepository.GetCapacityAsync(
+                venueId);
 
         if (!capacity.HasValue || capacity.Value <= 0)
+        {
             throw new ArgumentException(
                 "Venue capacity is not available.");
+        }
 
         return capacity.Value;
     }
@@ -281,10 +301,11 @@ public class EventRegistrationService : IEventRegistrationService
         DateTime eventStartTime,
         DateTime now)
     {
-        var timeUntilEvent = eventStartTime - now;
+        var timeUntilEvent =
+            eventStartTime - now;
 
-        if (timeUntilEvent <= TimeSpan.FromHours(
-                NearEventThresholdHours))
+        if (timeUntilEvent <=
+            TimeSpan.FromHours(NearEventThresholdHours))
         {
             return NearEventHoldMinutes;
         }
@@ -292,12 +313,15 @@ public class EventRegistrationService : IEventRegistrationService
         return NormalHoldMinutes;
     }
 
-    private async Task ReleaseExpiredHoldsAsync(int eventId)
+    private async Task ReleaseExpiredHoldsAsync(
+        int eventId)
     {
         var registrations =
-            await _registrationRepository.GetByEventIdAsync(eventId);
+            await _registrationRepository.GetByEventIdAsync(
+                eventId);
 
-        await ReleaseExpiredHoldsAsync(registrations);
+        await ReleaseExpiredHoldsAsync(
+            registrations);
     }
 
     private async Task ReleaseExpiredHoldsAsync(
@@ -307,11 +331,14 @@ public class EventRegistrationService : IEventRegistrationService
 
         foreach (var registration in registrations)
         {
-            if (registration.Status == "Held" &&
+            if (registration.Status ==
+                    EventRegistrationStatus.Held &&
                 registration.ExpiresAt.HasValue &&
                 registration.ExpiresAt.Value <= now)
             {
-                registration.Status = "Expired";
+                registration.Status =
+                    EventRegistrationStatus.Expired;
+
                 registration.ExpiresAt = null;
 
                 await _registrationRepository.UpdateAsync(
@@ -323,13 +350,16 @@ public class EventRegistrationService : IEventRegistrationService
     private static bool IsActiveRegistration(
         EventRegistration registration)
     {
-        if (registration.Status == "Cancelled" ||
-            registration.Status == "Expired")
+        if (registration.Status ==
+                EventRegistrationStatus.Cancelled ||
+            registration.Status ==
+                EventRegistrationStatus.Expired)
         {
             return false;
         }
 
-        if (registration.Status == "Held" &&
+        if (registration.Status ==
+                EventRegistrationStatus.Held &&
             registration.ExpiresAt.HasValue &&
             registration.ExpiresAt.Value <= DateTime.UtcNow)
         {
@@ -344,14 +374,29 @@ public class EventRegistrationService : IEventRegistrationService
     {
         return new EventRegistrationDto
         {
-            EventRegistrationId = registration.EventRegistrationId,
-            EventId = registration.EventId,
-            StudentId = registration.StudentId,
-            EventSeatId = registration.EventSeatId,
-            Status = registration.Status,
-            HeldAt = registration.HeldAt,
-            ExpiresAt = registration.ExpiresAt,
-            RegisteredAt = registration.RegisteredAt
+            EventRegistrationId =
+                registration.EventRegistrationId,
+
+            EventId =
+                registration.EventId,
+
+            StudentId =
+                registration.StudentId,
+
+            EventSeatId =
+                registration.EventSeatId,
+
+            Status =
+                registration.Status,
+
+            HeldAt =
+                registration.HeldAt,
+
+            ExpiresAt =
+                registration.ExpiresAt,
+
+            RegisteredAt =
+                registration.RegisteredAt
         };
     }
 }

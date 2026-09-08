@@ -1,4 +1,6 @@
-﻿namespace CampusServicePortal.Modules.Fees.Entities;
+﻿using CampusServicePortal_TicUnicorns.Modules.Fees.Enums;
+
+namespace CampusServicePortal.Modules.Fees.Entities;
 
 public class RefundRequest
 {
@@ -10,7 +12,7 @@ public class RefundRequest
 
     public decimal Amount { get; set; }
 
-    public string Status { get; set; } = string.Empty;
+    public RefundStatus Status { get; set; } = RefundStatus.Pending;
 
     public DateTime RequestedAt { get; set; }
 

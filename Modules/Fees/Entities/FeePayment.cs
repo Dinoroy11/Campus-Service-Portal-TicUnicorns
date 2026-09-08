@@ -1,4 +1,6 @@
-﻿namespace CampusServicePortal.Modules.Fees.Entities;
+﻿using CampusServicePortal_TicUnicorns.Modules.Fees.Enums;
+
+namespace CampusServicePortal.Modules.Fees.Entities;
 
 public class FeePayment
 {
@@ -8,12 +10,13 @@ public class FeePayment
 
     public decimal Amount { get; set; }
 
-    public string PaymentStatus { get; set; } = string.Empty;
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
 
     public string? PaymentReference { get; set; }
 
     public DateTime? PaidAt { get; set; }
 
+    // Cross-module payment reference
     public int? SourcePaymentId { get; set; }
 
     public int? SourceFeeId { get; set; }

@@ -1,7 +1,8 @@
 ﻿using CampusServicePortal.Modules.Events.DTOs;
 using CampusServicePortal.Modules.Events.Entities;
+using CampusServicePortal.Modules.Events.Enums;
 using CampusServicePortal.Modules.Events.Repositories;
- 
+using CampusServicePortal_TicUnicorns.Modules.Events.Interfaces.Service;
 
 namespace CampusServicePortal.Modules.Events.Services;
 
@@ -34,7 +35,8 @@ public class EventPaymentService : IEventPaymentService
         int eventPaymentId)
     {
         var payment =
-            await _paymentRepository.GetByIdAsync(eventPaymentId);
+            await _paymentRepository.GetByIdAsync(
+                eventPaymentId);
 
         if (payment == null)
             return null;
@@ -107,15 +109,25 @@ public class EventPaymentService : IEventPaymentService
         {
             RegistrationId = dto.RegistrationId,
             Amount = dto.Amount,
-            PaymentStatus = string.IsNullOrWhiteSpace(dto.PaymentStatus)
-                ? "Pending"
-                : dto.PaymentStatus.Trim(),
+            PaymentStatus = dto.PaymentStatus,
             PaymentReference = dto.PaymentReference?.Trim(),
             PaidAt = dto.PaidAt
         };
 
         var createdPayment =
             await _paymentRepository.CreateAsync(payment);
+
+        if (createdPayment.PaymentStatus ==
+            EventPaymentStatus.Paid)
+        {
+            registration.Status =
+                EventRegistrationStatus.Confirmed;
+
+            registration.ExpiresAt = null;
+
+            await _registrationRepository.UpdateAsync(
+                registration);
+        }
 
         return MapToDto(createdPayment);
     }
@@ -167,11 +179,23 @@ public class EventPaymentService : IEventPaymentService
         }
 
         payment.Amount = dto.Amount;
-        payment.PaymentStatus = dto.PaymentStatus.Trim();
+        payment.PaymentStatus = dto.PaymentStatus;
         payment.PaymentReference = dto.PaymentReference?.Trim();
         payment.PaidAt = dto.PaidAt;
 
         await _paymentRepository.UpdateAsync(payment);
+
+        if (payment.PaymentStatus ==
+            EventPaymentStatus.Paid)
+        {
+            registration.Status =
+                EventRegistrationStatus.Confirmed;
+
+            registration.ExpiresAt = null;
+
+            await _registrationRepository.UpdateAsync(
+                registration);
+        }
 
         return true;
     }

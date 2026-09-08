@@ -1,4 +1,6 @@
-﻿namespace CampusServicePortal.Modules.Events.DTOs;
+﻿using CampusServicePortal.Modules.Events.Enums;
+
+namespace CampusServicePortal.Modules.Events.DTOs;
 
 public class EventPaymentDto
 {
@@ -8,7 +10,8 @@ public class EventPaymentDto
 
     public decimal Amount { get; set; }
 
-    public string PaymentStatus { get; set; } = string.Empty;
+    public EventPaymentStatus PaymentStatus { get; set; }
+        = EventPaymentStatus.Pending;
 
     public string? PaymentReference { get; set; }
 

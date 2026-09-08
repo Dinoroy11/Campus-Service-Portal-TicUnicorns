@@ -1,4 +1,6 @@
-﻿namespace CampusServicePortal.Modules.Fees.Entities;
+﻿using CampusServicePortal_TicUnicorns.Modules.Fees.Enums;
+
+namespace CampusServicePortal.Modules.Fees.Entities;
 
 public class StudentFee
 {
@@ -12,7 +14,7 @@ public class StudentFee
 
     public DateTime? DueDate { get; set; }
 
-    public string Status { get; set; } = string.Empty;
+    public StudentFeeStatus Status { get; set; } = StudentFeeStatus.Outstanding;
 
     public string? ExamReference { get; set; }
 

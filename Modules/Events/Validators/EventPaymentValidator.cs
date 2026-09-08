@@ -16,10 +16,8 @@ public class EventPaymentValidator : AbstractValidator<EventPaymentDto>
             .WithMessage("Payment amount must be greater than zero.");
 
         RuleFor(x => x.PaymentStatus)
-            .NotEmpty()
-            .WithMessage("Payment status is required.")
-            .MaximumLength(30)
-            .WithMessage("Payment status cannot exceed 30 characters.");
+            .IsInEnum()
+            .WithMessage("Invalid payment status.");
 
         RuleFor(x => x.PaymentReference)
             .MaximumLength(100)
@@ -28,9 +26,9 @@ public class EventPaymentValidator : AbstractValidator<EventPaymentDto>
 
         RuleFor(x => x.PaidAt)
             .NotEmpty()
-            .When(x => x.PaymentStatus.Equals(
-                "Paid",
-                StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Paid date and time is required when payment status is Paid.");
+            .When(x => x.PaymentStatus ==
+                       Modules.Events.Enums.EventPaymentStatus.Paid)
+            .WithMessage(
+                "Paid date and time is required when payment status is Paid.");
     }
 }
