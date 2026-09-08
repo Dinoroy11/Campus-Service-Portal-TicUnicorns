@@ -1,7 +1,10 @@
-﻿namespace CampusServicePortal.Modules.Hostels.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CampusServicePortal.Modules.Hostels.Entities;
 
 public class RoomBed
 {
+    [Key]
     public int BedId { get; set; }
 
     public int RoomId { get; set; }

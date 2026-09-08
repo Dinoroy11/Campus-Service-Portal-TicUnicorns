@@ -1,7 +1,10 @@
-﻿namespace CampusServicePortal.Modules.SystemSettings.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CampusServicePortal.Modules.SystemSettings.Entities
 {
     public class SystemSetting
     {
+        [Key]
         public int SettingId { get; set; }
 
         public string Key { get; set; } = string.Empty;

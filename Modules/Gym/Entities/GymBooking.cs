@@ -1,20 +1,21 @@
-﻿namespace CampusServicePortal.Modules.Gym.Entities
+﻿using System.ComponentModel.DataAnnotations;
 
+namespace CampusServicePortal.Modules.Gym.Entities;
+
+public class GymBooking
 {
-    public class GymBooking
-    {
-        public int BookingId { get; set; }
+    [Key]
+    public int BookingId { get; set; }
 
-        public int SlotId { get; set; }
+    public int SlotId { get; set; }
 
-        public int UserId { get; set; }
+    public int UserId { get; set; }
 
-        public DateTime BookingDate { get; set; }
+    public DateTime BookingDate { get; set; }
 
-        public string Status { get; set; } = "Booked";
+    public string Status { get; set; } = "Booked";
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public GymSlot? GymSlot { get; set; }
-    }
+    public GymSlot? GymSlot { get; set; }
 }

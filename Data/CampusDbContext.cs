@@ -35,7 +35,8 @@ using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
 // =========================================================
 // Complaints
 // =========================================================
-using CampusServicePortal_TicUnicorns.Modules.Complaints.Entities;
+
+using CampusServicePortal.Modules.Complaints.Entities;
 // =========================================================
 // Laundry
 // =========================================================
@@ -155,9 +156,7 @@ public class CampusDbContext : DbContext
     // =========================================================
     // COMPLAINTS
     // =========================================================
-
-    public DbSet<ComplaintsEntities> Complaints { get; set; }
-
+    public DbSet<Complaint> Complaints { get; set; }
 
     // =========================================================
     // EF CORE MODEL CONFIGURATION

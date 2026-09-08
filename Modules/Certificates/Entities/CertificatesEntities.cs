@@ -1,7 +1,10 @@
-﻿namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Entities
 {
     public class CertificatesEntities
     {
+        [Key]
         public int CertificateId { get; set; }
 
         public int StudentId { get; set; }

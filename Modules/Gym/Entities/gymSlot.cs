@@ -1,7 +1,10 @@
-﻿namespace CampusServicePortal.Modules.Gym.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CampusServicePortal.Modules.Gym.Entities
 {
     public class GymSlot
     {
+        [Key]
         public int SlotId { get; set; }
 
         public int GymId { get; set; }

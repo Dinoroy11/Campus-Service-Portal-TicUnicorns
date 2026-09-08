@@ -1,7 +1,10 @@
-﻿namespace CampusServicePortal_TicUnicorns.Modules.Laundry.Entities
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace CampusServicePortal_TicUnicorns.Modules.Laundry.Entities
 {
     public class LaundryEntities
     {
+        [Key]
         public int LaundryId { get; set; }
 
         public int StudentId { get; set; }
