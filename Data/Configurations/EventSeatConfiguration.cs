@@ -7,8 +7,7 @@ namespace CampusServicePortal_TicUnicorns.Data.Configurations;
 public class EventSeatConfiguration
     : IEntityTypeConfiguration<EventSeat>
 {
-    public void Configure(
-        EntityTypeBuilder<EventSeat> builder)
+    public void Configure(EntityTypeBuilder<EventSeat> builder)
     {
         builder.ToTable("EventSeats");
 
@@ -31,8 +30,12 @@ public class EventSeatConfiguration
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(x => x.EventId);
+        builder.HasOne<Event>()
+            .WithMany()
+            .HasForeignKey(x => x.EventId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => x.SeatNumber);
+        builder.HasIndex(x => new { x.EventId, x.SeatNumber })
+            .IsUnique();
     }
 }

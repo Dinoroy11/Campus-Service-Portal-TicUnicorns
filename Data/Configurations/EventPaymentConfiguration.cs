@@ -29,5 +29,10 @@ public class EventPaymentConfiguration
 
         builder.HasIndex(x => x.RegistrationId)
             .IsUnique();
+
+        builder.HasOne<EventRegistration>()
+            .WithMany()
+            .HasForeignKey(x => x.RegistrationId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

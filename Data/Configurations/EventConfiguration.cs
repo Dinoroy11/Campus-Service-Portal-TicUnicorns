@@ -40,6 +40,9 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(x => x.IsActive)
             .IsRequired();
 
-        builder.HasIndex(x => x.VenueId);
+        builder.HasOne<Venue>()
+            .WithMany()
+            .HasForeignKey(x => x.VenueId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
