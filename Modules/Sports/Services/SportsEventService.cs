@@ -1,0 +1,118 @@
+﻿using CampusServicePortal_TicUnicorns.Modules.Sports.DTOs;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Service;
+
+namespace CampusServicePortal_TicUnicorns.Modules.Sports.Services;
+
+public class SportsEventService : ISportsEventService
+{
+    private readonly ISportsEventRepository _sportsEventRepository;
+
+    public SportsEventService(
+        ISportsEventRepository sportsEventRepository)
+    {
+        _sportsEventRepository = sportsEventRepository;
+    }
+
+    public async Task<IEnumerable<SportsEventDto>> GetAllAsync()
+    {
+        var events = await _sportsEventRepository.GetAllAsync();
+
+        return events.Select(MapToDto);
+    }
+
+    public async Task<SportsEventDto?> GetByIdAsync(int sportsEventId)
+    {
+        if (sportsEventId <= 0)
+            throw new ArgumentException("Invalid sports event ID.");
+
+        var sportsEvent =
+            await _sportsEventRepository.GetByIdAsync(sportsEventId);
+
+        return sportsEvent == null
+            ? null
+            : MapToDto(sportsEvent);
+    }
+
+    public async Task<SportsEventDto> CreateAsync(
+        CreateSportsEventDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.EventName))
+            throw new ArgumentException("Event name is required.");
+
+        if (dto.EventDate == default)
+            throw new ArgumentException("Event date is required.");
+
+        if (dto.StartTime >= dto.EndTime)
+            throw new ArgumentException(
+                "Start time must be earlier than end time.");
+
+        var sportsEvent = new SportsEvent
+        {
+            EventName = dto.EventName.Trim(),
+            Description = dto.Description,
+            EventDate = dto.EventDate,
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            Location = dto.Location,
+            IsActive = true
+        };
+
+        await _sportsEventRepository.AddAsync(sportsEvent);
+
+        return MapToDto(sportsEvent);
+    }
+
+    public async Task<SportsEventDto?> UpdateAsync(
+        int sportsEventId,
+        UpdateSportsEventDto dto)
+    {
+        if (sportsEventId <= 0)
+            throw new ArgumentException("Invalid sports event ID.");
+
+        if (string.IsNullOrWhiteSpace(dto.EventName))
+            throw new ArgumentException("Event name is required.");
+
+        if (dto.EventDate == default)
+            throw new ArgumentException("Event date is required.");
+
+        if (dto.StartTime >= dto.EndTime)
+            throw new ArgumentException(
+                "Start time must be earlier than end time.");
+
+        var sportsEvent =
+            await _sportsEventRepository.GetByIdAsync(sportsEventId);
+
+        if (sportsEvent == null)
+            return null;
+
+        sportsEvent.EventName = dto.EventName.Trim();
+        sportsEvent.Description = dto.Description;
+        sportsEvent.EventDate = dto.EventDate;
+        sportsEvent.StartTime = dto.StartTime;
+        sportsEvent.EndTime = dto.EndTime;
+        sportsEvent.Location = dto.Location;
+        sportsEvent.IsActive = dto.IsActive;
+
+        await _sportsEventRepository.UpdateAsync(sportsEvent);
+
+        return MapToDto(sportsEvent);
+    }
+
+    private static SportsEventDto MapToDto(
+        SportsEvent sportsEvent)
+    {
+        return new SportsEventDto
+        {
+            SportsEventId = sportsEvent.SportsEventId,
+            EventName = sportsEvent.EventName,
+            Description = sportsEvent.Description,
+            EventDate = sportsEvent.EventDate,
+            StartTime = sportsEvent.StartTime,
+            EndTime = sportsEvent.EndTime,
+            Location = sportsEvent.Location,
+            IsActive = sportsEvent.IsActive
+        };
+    }
+}
