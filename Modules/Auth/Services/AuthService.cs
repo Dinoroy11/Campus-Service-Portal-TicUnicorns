@@ -17,13 +17,16 @@ public class AuthService : IAuthService
     private readonly IAuthRepository _authRepository;
     private readonly IConfiguration _configuration;
     private readonly PasswordHasher<User> _passwordHasher;
+    private readonly IOtpService _otpService;
 
     public AuthService(
         IAuthRepository authRepository,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IOtpService otpService)
     {
         _authRepository = authRepository;
         _configuration = configuration;
+        _otpService = otpService;
         _passwordHasher = new PasswordHasher<User>();
     }
 

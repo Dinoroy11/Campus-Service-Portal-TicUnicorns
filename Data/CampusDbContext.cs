@@ -1,63 +1,58 @@
 ﻿// =========================================================
 // Gym
 // =========================================================
-using CampusServicePortal.Modules.Gym.Entities;
-
-// =========================================================
-// Hostels
-// =========================================================
-using CampusServicePortal.Modules.Hostels.Entities;
-
-// =========================================================
-// Identity
-// =========================================================
-using CampusServicePortal.Modules.Identity.Entities;
-
-// =========================================================
-// Leave
-// =========================================================
-using CampusServicePortal.Modules.Leave.Entities;
-
-// =========================================================
-// Notifications
-// =========================================================
-using CampusServicePortal.Modules.Notifications.Entities;
-
-// =========================================================
-// System Settings
-// =========================================================
-using CampusServicePortal.Modules.SystemSettings.Entities;
-
-// =========================================================
-// Canteens
-// =========================================================
-using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
-
-// =========================================================
-// Certificates
-// =========================================================
-using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
-
+using CampusServicePortal.Modules.Auth.Entities;
 // =========================================================
 // Complaints
 // =========================================================
 using CampusServicePortal.Modules.Complaints.Entities;
-
+using CampusServicePortal.Modules.Gym.Entities;
+// =========================================================
+// Hostels
+// =========================================================
+using CampusServicePortal.Modules.Hostels.Entities;
+// =========================================================
+// Identity
+// =========================================================
+using CampusServicePortal.Modules.Identity.Entities;
+// =========================================================
+// Leave
+// =========================================================
+using CampusServicePortal.Modules.Leave.Entities;
+// =========================================================
+// Notifications
+// =========================================================
+using CampusServicePortal.Modules.Notifications.Entities;
+// =========================================================
+// System Settings
+// =========================================================
+using CampusServicePortal.Modules.SystemSettings.Entities;
+// =========================================================
+// Canteens
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Canteen.Entities;
+// =========================================================
+// Certificates
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
 // =========================================================
 // Laundry
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Laundry.Entities;
+// =========================================================
+// Sports
+// =========================================================
+using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
+// =========================================================
+// AUTH
+// =========================================================
+ 
+
 
 // =========================================================
 // Students
 // =========================================================
 using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
-
-// =========================================================
-// Sports
-// =========================================================
-using CampusServicePortal_TicUnicorns.Modules.Sports.Entities;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal_TicUnicorns.Data;
@@ -186,6 +181,13 @@ public class CampusDbContext : DbContext
     public DbSet<SportsRegistration> SportsRegistrations { get; set; }
 
     public DbSet<CoachMeeting> CoachMeetings { get; set; }
+
+
+    // =========================================================
+    // IDENTITY & ACCESS
+    // =========================================================
+    public DbSet<OtpVerification> OtpVerifications { get; set; }
+
 
     // =========================================================
     // EF CORE MODEL CONFIGURATION
