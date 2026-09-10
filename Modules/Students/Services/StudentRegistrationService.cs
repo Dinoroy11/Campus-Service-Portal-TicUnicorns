@@ -1,10 +1,11 @@
-﻿using CampusServicePortal.Modules.Identity.Entities;
+﻿using CampusServicePortal.Modules.Auth.Entities;
+using CampusServicePortal.Modules.Identity.Entities;
+using CampusServicePortal.Modules.Identity.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Modules.Auth.Interfaces.Service;
+using CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Repository;
 using CampusServicePortal_TicUnicorns.Modules.Students.DTOs;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Repository;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Service;
-using CampusServicePortal_TicUnicorns.Modules.Auth.Interfaces.Service;
-using CampusServicePortal.Modules.Identity.Interfaces.Repository;
-using Microsoft.AspNetCore.Identity;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Students.Services;
 
@@ -12,87 +13,71 @@ public class StudentRegistrationService : IStudentRegistrationService
 {
     private readonly IStudentMasterListRepository _masterListRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IRoleRepository _roleRepository;
     private readonly IStudentRepository _studentRepository;
     private readonly IOtpService _otpService;
-
-    private readonly PasswordHasher<User> _passwordHasher;
+    private readonly ISmsService _smsService;
 
     public StudentRegistrationService(
         IStudentMasterListRepository masterListRepository,
         IUserRepository userRepository,
-        IRoleRepository roleRepository,
         IStudentRepository studentRepository,
-        IOtpService otpService)
+        IOtpService otpService,
+        ISmsService smsService)
     {
         _masterListRepository = masterListRepository;
         _userRepository = userRepository;
-        _roleRepository = roleRepository;
         _studentRepository = studentRepository;
         _otpService = otpService;
-
-        _passwordHasher = new PasswordHasher<User>();
+        _smsService = smsService;
     }
 
     public async Task SendOtpAsync(StudentRegistrationDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.UniversityStudentId))
-        {
             throw new ArgumentException(
-                "University student ID is required.");
-        }
+                "University Student ID is required.");
 
         if (string.IsNullOrWhiteSpace(dto.MobileNumber))
-        {
             throw new ArgumentException(
                 "Mobile number is required.");
-        }
 
+        // 1. Find student in Master Student List
         var masterStudent =
             await _masterListRepository
                 .GetByUniversityStudentIdAsync(
                     dto.UniversityStudentId);
 
         if (masterStudent is null)
-        {
             throw new KeyNotFoundException(
-                "Student was not found in the master list.");
-        }
+                "Student was not found in the master student list.");
 
+        // 2. Check master student is active
         if (!masterStudent.IsActive)
-        {
             throw new InvalidOperationException(
-                "Student is not active in the master list.");
-        }
+                "Student is not active.");
 
-        if (!string.Equals(
-                masterStudent.MobileNumber,
-                dto.MobileNumber,
-                StringComparison.Ordinal))
-        {
+        // 3. Verify mobile number
+        if (masterStudent.MobileNumber != dto.MobileNumber)
             throw new UnauthorizedAccessException(
-                "The mobile number does not match the student record.");
-        }
+                "Mobile number does not match the registered student record.");
 
-        var existingStudent =
-            await _studentRepository
-                .ExistsByMasterStudentIdAsync(
-                    masterStudent.MasterStudentId);
-
-        if (existingStudent)
+        // 4. Check whether Student profile already exists
+        if (await _studentRepository
+            .ExistsByMasterStudentIdAsync(
+                masterStudent.MasterStudentId))
         {
             throw new InvalidOperationException(
-                "Student registration has already been completed.");
+                "Student is already registered.");
         }
 
-        var existingUser =
+        // 5. Find existing User using University Student ID
+        var user =
             await _userRepository
                 .GetByUsernameAsync(
                     masterStudent.UniversityStudentId);
 
-        User user;
-
-        if (existingUser is null)
+        // 6. Create User if it does not exist
+        if (user is null)
         {
             user = new User
             {
@@ -101,31 +86,35 @@ public class StudentRegistrationService : IStudentRegistrationService
                 IsPhoneVerified = false,
                 IsActive = false,
                 MustChangePassword = true,
+                PasswordHash = Guid.NewGuid().ToString(),
                 CreatedAt = DateTime.UtcNow
             };
-
-            user.PasswordHash = _passwordHasher.HashPassword(
-                user,
-                Guid.NewGuid().ToString());
 
             await _userRepository.AddAsync(user);
         }
         else
         {
-            if (existingUser.IsPhoneVerified)
+            // Existing user should not already be verified
+            if (user.IsPhoneVerified)
             {
                 throw new InvalidOperationException(
-                    "This user account is already verified.");
+                    "Student phone number is already verified.");
             }
 
-            user = existingUser;
-
+            // Keep the registered master-list number
             user.PhoneNumber = masterStudent.MobileNumber;
 
             await _userRepository.UpdateAsync(user);
         }
 
-        await _otpService.GenerateAsync(user.UserId);
+        // 7. Generate OTP
+        var otp =
+            await _otpService.GenerateAsync(user.UserId);
+
+        // 8. Send OTP through Notify.lk
+        await _smsService.SendAsync(
+            masterStudent.MobileNumber,
+            $"Your Campus Service Portal OTP is {otp}. It is valid for 5 minutes.");
     }
 
     public async Task VerifyOtpAsync(
@@ -133,7 +122,55 @@ public class StudentRegistrationService : IStudentRegistrationService
         string mobileNumber,
         string otp)
     {
-        throw new NotImplementedException(
-            "OTP verification will be implemented in the next step.");
+        if (string.IsNullOrWhiteSpace(universityStudentId))
+            throw new ArgumentException(
+                "University Student ID is required.");
+
+        if (string.IsNullOrWhiteSpace(mobileNumber))
+            throw new ArgumentException(
+                "Mobile number is required.");
+
+        if (string.IsNullOrWhiteSpace(otp))
+            throw new ArgumentException(
+                "OTP is required.");
+
+        // 1. Find student in Master Student List
+        var masterStudent =
+            await _masterListRepository
+                .GetByUniversityStudentIdAsync(
+                    universityStudentId);
+
+        if (masterStudent is null)
+            throw new KeyNotFoundException(
+                "Student was not found in the master student list.");
+
+        // 2. Check mobile number
+        if (masterStudent.MobileNumber != mobileNumber)
+            throw new UnauthorizedAccessException(
+                "Mobile number does not match the registered student record.");
+
+        // 3. Find User
+        var user =
+            await _userRepository
+                .GetByUsernameAsync(
+                    masterStudent.UniversityStudentId);
+
+        if (user is null)
+            throw new KeyNotFoundException(
+                "Student account was not found.");
+
+        // 4. Verify OTP
+        await _otpService.VerifyAsync(
+            user.UserId,
+            otp);
+
+        // 5. Mark phone as verified
+        user.IsPhoneVerified = true;
+        user.IsActive = true;
+
+        await _userRepository.UpdateAsync(user);
+
+        // Student creation will be completed
+        // after OTP verification flow is finalized.
     }
 }

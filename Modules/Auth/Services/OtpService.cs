@@ -10,7 +10,7 @@ public class OtpService : IOtpService
 {
     private readonly IOtpRepository _otpRepository;
 
-    private const int OtpLength = 6;
+ 
     private const int OtpExpiryMinutes = 5;
     private const int MaxAttempts = 5;
 
@@ -19,7 +19,7 @@ public class OtpService : IOtpService
         _otpRepository = otpRepository;
     }
 
-    public async Task<OtpVerification> GenerateAsync(int userId)
+    public async Task<string> GenerateAsync(int userId)
     {
         var otp = GenerateOtp();
 
@@ -36,10 +36,7 @@ public class OtpService : IOtpService
 
         await _otpRepository.AddAsync(otpVerification);
 
-        // TODO: Send OTP to user's mobile number.
-        // SMS provider integration will be added separately.
-
-        return otpVerification;
+        return otp;
     }
 
     public async Task VerifyAsync(int userId, string otp)

@@ -5,6 +5,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>CampusServicePortal_TicUnicorns</RootNamespace>
+		<UserSecretsId>2fb8f45b-8173-4fd2-a0ed-ba8aa3777b9f</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>

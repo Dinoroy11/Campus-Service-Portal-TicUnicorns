@@ -346,6 +346,12 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 
+
+
+
+
+
+builder.Services.AddHttpClient<ISmsService, SmsService>();
 // =========================================================
 // Swagger / OpenAPI
 // =========================================================

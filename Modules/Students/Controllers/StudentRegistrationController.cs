@@ -9,14 +9,12 @@ namespace CampusServicePortal_TicUnicorns.Modules.Students.Controllers;
 [Route("api/[controller]")]
 public class StudentRegistrationController : ControllerBase
 {
-    private readonly IStudentRegistrationService
-        _studentRegistrationService;
+    private readonly IStudentRegistrationService _studentRegistrationService;
 
     public StudentRegistrationController(
         IStudentRegistrationService studentRegistrationService)
     {
-        _studentRegistrationService =
-            studentRegistrationService;
+        _studentRegistrationService = studentRegistrationService;
     }
 
     [HttpPost("send-otp")]
@@ -29,6 +27,22 @@ public class StudentRegistrationController : ControllerBase
         return Ok(new
         {
             message = "OTP sent successfully."
+        });
+    }
+
+    [HttpPost("verify-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyOtp(
+        [FromBody] StudentOtpVerificationDto dto)
+    {
+        await _studentRegistrationService.VerifyOtpAsync(
+            dto.UniversityStudentId,
+            dto.MobileNumber,
+            dto.Otp);
+
+        return Ok(new
+        {
+            message = "OTP verified successfully."
         });
     }
 }
