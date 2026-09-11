@@ -30,6 +30,10 @@ public class AuthService : IAuthService
         _passwordHasher = new PasswordHasher<User>();
     }
 
+    // =========================================================
+    // NORMAL LOGIN
+    // =========================================================
+
     public async Task<LoginResponseDto> LoginAsync(
         LoginRequestDto dto)
     {
@@ -48,10 +52,11 @@ public class AuthService : IAuthService
                 "User account is inactive.");
         }
 
-        var passwordResult = _passwordHasher.VerifyHashedPassword(
-            user,
-            user.PasswordHash,
-            dto.Password);
+        var passwordResult =
+            _passwordHasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                dto.Password);
 
         if (passwordResult == PasswordVerificationResult.Failed)
         {
@@ -59,14 +64,17 @@ public class AuthService : IAuthService
                 "Invalid username or password.");
         }
 
-        var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(
-            GetAccessTokenLifetimeMinutes());
+        var accessTokenExpiresAt =
+            DateTime.UtcNow.AddMinutes(
+                GetAccessTokenLifetimeMinutes());
 
-        var accessToken = GenerateAccessToken(
-            user,
-            accessTokenExpiresAt);
+        var accessToken =
+            GenerateAccessToken(
+                user,
+                accessTokenExpiresAt);
 
-        var refreshToken = GenerateRefreshToken();
+        var refreshToken =
+            GenerateRefreshToken();
 
         return new LoginResponseDto
         {
@@ -78,6 +86,46 @@ public class AuthService : IAuthService
         };
     }
 
+
+    // =========================================================
+    // CREATE LOGIN RESPONSE
+    // Used by Student First Login
+    // =========================================================
+
+    public Task<LoginResponseDto> CreateLoginResponseAsync(
+        User user,
+        string roleName)
+    {
+        var accessTokenExpiresAt =
+            DateTime.UtcNow.AddMinutes(
+                GetAccessTokenLifetimeMinutes());
+
+        var accessToken =
+            GenerateAccessToken(
+                user,
+                accessTokenExpiresAt,
+                roleName);
+
+        var refreshToken =
+            GenerateRefreshToken();
+
+        var response = new LoginResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            AccessTokenExpiresAt = accessTokenExpiresAt,
+            MustChangePassword = user.MustChangePassword,
+            IsPhoneVerified = user.IsPhoneVerified
+        };
+
+        return Task.FromResult(response);
+    }
+
+
+    // =========================================================
+    // REFRESH TOKEN
+    // =========================================================
+
     public Task<RefreshTokenResponseDto> RefreshTokenAsync(
         RefreshTokenRequestDto dto)
     {
@@ -85,11 +133,17 @@ public class AuthService : IAuthService
             "Refresh token persistence is not available until the shared authentication persistence is implemented.");
     }
 
+
+    // =========================================================
+    // CHANGE PASSWORD
+    // =========================================================
+
     public async Task ChangePasswordAsync(
         int userId,
         ChangePasswordRequestDto dto)
     {
-        var user = await _authRepository.GetUserByIdAsync(userId);
+        var user =
+            await _authRepository.GetUserByIdAsync(userId);
 
         if (user is null)
         {
@@ -97,25 +151,33 @@ public class AuthService : IAuthService
                 "User not found.");
         }
 
-        var passwordResult = _passwordHasher.VerifyHashedPassword(
-            user,
-            user.PasswordHash,
-            dto.CurrentPassword);
+        var passwordResult =
+            _passwordHasher.VerifyHashedPassword(
+                user,
+                user.PasswordHash,
+                dto.CurrentPassword);
 
-        if (passwordResult == PasswordVerificationResult.Failed)
+        if (passwordResult ==
+            PasswordVerificationResult.Failed)
         {
             throw new UnauthorizedAccessException(
                 "Current password is incorrect.");
         }
 
-        user.PasswordHash = _passwordHasher.HashPassword(
-            user,
-            dto.NewPassword);
+        user.PasswordHash =
+            _passwordHasher.HashPassword(
+                user,
+                dto.NewPassword);
 
         user.MustChangePassword = false;
 
         await _authRepository.UpdateUserAsync(user);
     }
+
+
+    // =========================================================
+    // FORGOT PASSWORD
+    // =========================================================
 
     public Task ForgotPasswordAsync(
         ForgotPasswordRequestDto dto)
@@ -124,6 +186,11 @@ public class AuthService : IAuthService
             "Password reset persistence is not available until the shared authentication persistence is implemented.");
     }
 
+
+    // =========================================================
+    // RESET PASSWORD
+    // =========================================================
+
     public Task ResetPasswordAsync(
         ResetPasswordRequestDto dto)
     {
@@ -131,11 +198,17 @@ public class AuthService : IAuthService
             "Password reset persistence is not available until the shared authentication persistence is implemented.");
     }
 
+
+    // =========================================================
+    // AUTH OTP VERIFY
+    // =========================================================
+
     public async Task VerifyOtpAsync(
         VerifyOtpRequestDto dto)
     {
-        var user = await _authRepository
-            .GetUserByUsernameAsync(dto.Username);
+        var user =
+            await _authRepository
+                .GetUserByUsernameAsync(dto.Username);
 
         if (user is null)
         {
@@ -147,11 +220,17 @@ public class AuthService : IAuthService
             "OTP persistence and verification storage are not available until the shared authentication persistence is implemented.");
     }
 
+
+    // =========================================================
+    // RESEND OTP
+    // =========================================================
+
     public async Task ResendOtpAsync(
         ResendOtpRequestDto dto)
     {
-        var user = await _authRepository
-            .GetUserByUsernameAsync(dto.Username);
+        var user =
+            await _authRepository
+                .GetUserByUsernameAsync(dto.Username);
 
         if (user is null)
         {
@@ -163,23 +242,42 @@ public class AuthService : IAuthService
             "OTP persistence and delivery are not available until the shared authentication persistence is implemented.");
     }
 
-    public Task LogoutAsync(int userId)
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    public Task LogoutAsync(
+        int userId)
     {
         throw new NotSupportedException(
             "Token revocation persistence is not available until the shared authentication persistence is implemented.");
     }
 
-    public Task LogoutAllAsync(int userId)
+
+    // =========================================================
+    // LOGOUT ALL
+    // =========================================================
+
+    public Task LogoutAllAsync(
+        int userId)
     {
         throw new NotSupportedException(
             "Token revocation persistence is not available until the shared authentication persistence is implemented.");
     }
+
+
+    // =========================================================
+    // GENERATE ACCESS TOKEN
+    // =========================================================
 
     private string GenerateAccessToken(
         User user,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        string? roleName = null)
     {
-        var key = _configuration["Jwt:Key"];
+        var key =
+            _configuration["Jwt:Key"];
 
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -187,50 +285,81 @@ public class AuthService : IAuthService
                 "JWT signing key is not configured.");
         }
 
-        var issuer = _configuration["Jwt:Issuer"];
-        var audience = _configuration["Jwt:Audience"];
+        var issuer =
+            _configuration["Jwt:Issuer"];
+
+        var audience =
+            _configuration["Jwt:Audience"];
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub,
+            new(
+                JwtRegisteredClaimNames.Sub,
                 user.UserId.ToString()),
 
-            new(ClaimTypes.Name,
+            new(
+                ClaimTypes.Name,
                 user.Username),
 
-            new(ClaimTypes.NameIdentifier,
+            new(
+                ClaimTypes.NameIdentifier,
                 user.UserId.ToString())
         };
 
-        var securityKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(key));
+        // Add role when available.
+        if (!string.IsNullOrWhiteSpace(roleName))
+        {
+            claims.Add(
+                new Claim(
+                    ClaimTypes.Role,
+                    roleName));
+        }
 
-        var credentials = new SigningCredentials(
-            securityKey,
-            SecurityAlgorithms.HmacSha256);
+        var securityKey =
+            new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(key));
 
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: expiresAt,
-            signingCredentials: credentials);
+        var credentials =
+            new SigningCredentials(
+                securityKey,
+                SecurityAlgorithms.HmacSha256);
+
+        var token =
+            new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: expiresAt,
+                signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler()
             .WriteToken(token);
     }
 
+
+    // =========================================================
+    // GENERATE REFRESH TOKEN
+    // =========================================================
+
     private static string GenerateRefreshToken()
     {
-        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        var randomBytes =
+            RandomNumberGenerator.GetBytes(64);
 
-        return Convert.ToBase64String(randomBytes);
+        return Convert.ToBase64String(
+            randomBytes);
     }
+
+
+    // =========================================================
+    // JWT LIFETIME
+    // =========================================================
 
     private int GetAccessTokenLifetimeMinutes()
     {
         var configuredValue =
-            _configuration["Jwt:AccessTokenLifetimeMinutes"];
+            _configuration[
+                "Jwt:AccessTokenLifetimeMinutes"];
 
         return int.TryParse(
             configuredValue,

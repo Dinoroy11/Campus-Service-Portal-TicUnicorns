@@ -1,4 +1,5 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Students.DTOs;
+﻿using CampusServicePortal_TicUnicorns.Modules.Auth.DTOs;
+using CampusServicePortal_TicUnicorns.Modules.Students.DTOs;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,17 +33,15 @@ public class StudentRegistrationController : ControllerBase
 
     [HttpPost("verify-otp")]
     [AllowAnonymous]
-    public async Task<IActionResult> VerifyOtp(
+    public async Task<ActionResult<LoginResponseDto>> VerifyOtp(
         [FromBody] StudentOtpVerificationDto dto)
     {
-        await _studentRegistrationService.VerifyOtpAsync(
-            dto.UniversityStudentId,
-            dto.MobileNumber,
-            dto.Otp);
+        var result =
+            await _studentRegistrationService.VerifyOtpAsync(
+                dto.UniversityStudentId,
+                dto.MobileNumber,
+                dto.Otp);
 
-        return Ok(new
-        {
-            message = "OTP verified successfully."
-        });
+        return Ok(result);
     }
 }

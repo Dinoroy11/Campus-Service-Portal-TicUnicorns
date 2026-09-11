@@ -1,10 +1,16 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Auth.DTOs;
+﻿using CampusServicePortal.Modules.Identity.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Auth.DTOs;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Auth.Interfaces.Service;
 
 public interface IAuthService
 {
-    Task<LoginResponseDto> LoginAsync(LoginRequestDto dto);
+    Task<LoginResponseDto> LoginAsync(
+        LoginRequestDto dto);
+
+    Task<LoginResponseDto> CreateLoginResponseAsync(
+        User user,
+        string roleName);
 
     Task<RefreshTokenResponseDto> RefreshTokenAsync(
         RefreshTokenRequestDto dto);
@@ -25,7 +31,9 @@ public interface IAuthService
     Task ResendOtpAsync(
         ResendOtpRequestDto dto);
 
-    Task LogoutAsync(int userId);
+    Task LogoutAsync(
+        int userId);
 
-    Task LogoutAllAsync(int userId);
+    Task LogoutAllAsync(
+        int userId);
 }
