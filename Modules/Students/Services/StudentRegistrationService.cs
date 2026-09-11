@@ -124,7 +124,7 @@ public class StudentRegistrationService : IStudentRegistrationService
 
                 // Temporary password value.
                 // Permanent password will be set
-                // after first login.
+                // after first OTP verification.
                 PasswordHash =
                     Guid.NewGuid().ToString(),
 
@@ -163,10 +163,10 @@ public class StudentRegistrationService : IStudentRegistrationService
 
 
     // =========================================================
-    // VERIFY OTP + FIRST LOGIN
+    // VERIFY OTP + CREATE PASSWORD SETUP TOKEN
     // =========================================================
 
-    public async Task<LoginResponseDto> VerifyOtpAsync(
+    public async Task<PasswordSetupResponseDto> VerifyOtpAsync(
         string universityStudentId,
         string mobileNumber,
         string otp)
@@ -266,9 +266,7 @@ public class StudentRegistrationService : IStudentRegistrationService
         user.IsPhoneVerified = true;
         user.IsActive = true;
 
-        // Important:
-        // Student must set a permanent password
-        // after first login.
+        // Student still needs to create permanent password.
         user.MustChangePassword = true;
 
         await _userRepository.UpdateAsync(user);
@@ -351,15 +349,28 @@ public class StudentRegistrationService : IStudentRegistrationService
             await _userRoleRepository.AddAsync(
                 userRole);
         }
+        // =====================================================
+        // 11. CREATE PASSWORD SETUP TOKEN
+        // =====================================================
+
+        var setupToken =
+            await _authService
+                .CreatePasswordSetupTokenAsync(user);
 
         // =====================================================
-        // 11. CREATE JWT
+        // 12. RETURN PASSWORD SETUP RESPONSE
         // =====================================================
 
-        return await _authService
-            .CreateLoginResponseAsync(
-                user,
-                "Student");
+        return new PasswordSetupResponseDto
+        {
+            SetupToken = setupToken,
+
+            ExpiresAt =
+                DateTime.UtcNow.AddMinutes(10),
+
+            Username =
+                user.Username
+        };
     }
 
 

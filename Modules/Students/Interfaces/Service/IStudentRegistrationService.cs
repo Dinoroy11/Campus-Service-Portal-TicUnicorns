@@ -8,7 +8,7 @@ public interface IStudentRegistrationService
     Task SendOtpAsync(
         StudentRegistrationDto dto);
 
-    Task<LoginResponseDto> VerifyOtpAsync(
+    Task<PasswordSetupResponseDto> VerifyOtpAsync(
         string universityStudentId,
         string mobileNumber,
         string otp);

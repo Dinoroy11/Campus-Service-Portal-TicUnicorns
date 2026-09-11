@@ -18,6 +18,10 @@ public class StudentRegistrationController : ControllerBase
         _studentRegistrationService = studentRegistrationService;
     }
 
+    // =========================================================
+    // SEND OTP
+    // =========================================================
+
     [HttpPost("send-otp")]
     [AllowAnonymous]
     public async Task<IActionResult> SendOtp(
@@ -31,9 +35,19 @@ public class StudentRegistrationController : ControllerBase
         });
     }
 
+
+    // =========================================================
+    // VERIFY OTP
+    // =========================================================
+    // Successful OTP verification does NOT return
+    // normal AccessToken / RefreshToken.
+    //
+    // It returns a short-lived Password Setup Token.
+    // =========================================================
+
     [HttpPost("verify-otp")]
     [AllowAnonymous]
-    public async Task<ActionResult<LoginResponseDto>> VerifyOtp(
+    public async Task<ActionResult<PasswordSetupResponseDto>> VerifyOtp(
         [FromBody] StudentOtpVerificationDto dto)
     {
         var result =
