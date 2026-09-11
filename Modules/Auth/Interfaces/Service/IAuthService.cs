@@ -12,6 +12,13 @@ public interface IAuthService
         User user,
         string roleName);
 
+    Task<string> CreatePasswordSetupTokenAsync(
+        User user);
+
+    Task SetInitialPasswordAsync(
+        int userId,
+        SetInitialPasswordRequestDto dto);
+
     Task<RefreshTokenResponseDto> RefreshTokenAsync(
         RefreshTokenRequestDto dto);
 

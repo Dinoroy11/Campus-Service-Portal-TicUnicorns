@@ -133,4 +133,31 @@ public class AuthController : ControllerBase
 
         return userId;
     }
+
+    [HttpPost("set-initial-password")]
+    [Authorize]
+    public async Task<IActionResult> SetInitialPassword(
+    [FromBody] SetInitialPasswordRequestDto dto)
+    {
+        var purpose =
+            User.FindFirstValue("purpose");
+
+        if (purpose != "password_setup")
+        {
+            throw new UnauthorizedAccessException(
+                "Invalid password setup token.");
+        }
+
+        var userId = GetCurrentUserId();
+
+        await _authService.SetInitialPasswordAsync(
+            userId,
+            dto);
+
+        return Ok(new
+        {
+            message = "Permanent password created successfully."
+        });
+    }
+
 }

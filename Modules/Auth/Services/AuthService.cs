@@ -121,10 +121,118 @@ public class AuthService : IAuthService
         return Task.FromResult(response);
     }
 
+    // =========================================================
+    // CREATE PASSWORD SETUP TOKEN
+    // Used after successful OTP verification
+    // =========================================================
 
+    public Task<string> CreatePasswordSetupTokenAsync(
+        User user)
+    {
+        var key =
+            _configuration["Jwt:Key"];
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidOperationException(
+                "JWT signing key is not configured.");
+        }
+
+        var issuer =
+            _configuration["Jwt:Issuer"];
+
+        var audience =
+            _configuration["Jwt:Audience"];
+
+        // Password setup token is valid only for 10 minutes.
+        var expiresAt =
+            DateTime.UtcNow.AddMinutes(10);
+
+        var claims = new List<Claim>
+    {
+        new(
+            ClaimTypes.NameIdentifier,
+            user.UserId.ToString()),
+
+        new(
+            ClaimTypes.Name,
+            user.Username),
+
+        new(
+            "purpose",
+            "password_setup")
+    };
+
+        var securityKey =
+            new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(key));
+
+        var credentials =
+            new SigningCredentials(
+                securityKey,
+                SecurityAlgorithms.HmacSha256);
+
+        var token =
+            new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: expiresAt,
+                signingCredentials: credentials);
+
+        return Task.FromResult(
+            new JwtSecurityTokenHandler()
+                .WriteToken(token));
+    }
+
+
+
+    // =========================================================
+    // SET INITIAL PASSWORD
+    // Used after successful OTP verification
+    // =========================================================
+
+    public async Task SetInitialPasswordAsync(
+        int userId,
+        SetInitialPasswordRequestDto dto)
+    {
+        var user =
+            await _authRepository
+                .GetUserByIdAsync(userId);
+
+        if (user is null)
+        {
+            throw new KeyNotFoundException(
+                "User not found.");
+        }
+
+        if (!user.IsPhoneVerified)
+        {
+            throw new UnauthorizedAccessException(
+                "Phone number has not been verified.");
+        }
+
+        if (!user.MustChangePassword)
+        {
+            throw new InvalidOperationException(
+                "Initial password has already been set.");
+        }
+
+        user.PasswordHash =
+            _passwordHasher.HashPassword(
+                user,
+                dto.NewPassword);
+
+        user.MustChangePassword = false;
+
+        await _authRepository.UpdateUserAsync(user);
+    }
     // =========================================================
     // REFRESH TOKEN
     // =========================================================
+
+
+
 
     public Task<RefreshTokenResponseDto> RefreshTokenAsync(
         RefreshTokenRequestDto dto)
