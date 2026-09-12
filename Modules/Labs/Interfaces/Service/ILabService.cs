@@ -16,6 +16,10 @@ public interface ILabService
 
     Task<LabSeatDto> CreateSeatAsync(CreateLabSeatDto dto);
 
+    Task<LabSeatStatusUpdateResultDto> UpdateSeatStatusAsync(
+        int labSeatId,
+        UpdateLabSeatStatusDto dto);
+
     Task<List<LabTimeSlotDto>> GetTimeSlotsByLabIdAsync(int labId);
 
     Task<LabTimeSlotDto> CreateTimeSlotAsync(
@@ -24,7 +28,9 @@ public interface ILabService
     Task<LabAvailabilityDto> GetAvailabilityAsync(
         int labId,
         int timeSlotId,
-        DateTime bookingDate);
+        DateTime bookingDate,
+        TimeSpan? requestedStartTime = null,
+        double? requestedHours = null);
 
     Task<LabBookingDto> CreateBookingAsync(
         CreateLabBookingDto dto);

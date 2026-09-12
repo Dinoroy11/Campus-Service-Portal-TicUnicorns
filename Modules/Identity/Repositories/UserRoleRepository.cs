@@ -17,12 +17,24 @@ public class UserRoleRepository : IUserRoleRepository
     public async Task<bool> ExistsAsync(int userId, int roleId)
     {
         return await _context.UserRoles
-            .AnyAsync(x => x.UserId == userId && x.RoleId == roleId);
+            .AnyAsync(x =>
+                x.UserId == userId &&
+                x.RoleId == roleId);
     }
 
     public async Task AddAsync(UserRole userRole)
     {
         await _context.UserRoles.AddAsync(userRole);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<string?> GetRoleNameByUserIdAsync(int userId)
+    {
+        return await _context.UserRoles
+            .Where(x => x.UserId == userId)
+            .Include(x => x.Role)
+            .Where(x => x.Role.IsActive)
+            .Select(x => x.Role.RoleName)
+            .FirstOrDefaultAsync();
     }
 }

@@ -26,5 +26,14 @@ public class CreateLabBookingValidator
             .Must(date => date.Date >= DateTime.UtcNow.Date)
             .WithMessage(
                 "Booking date cannot be in the past.");
+
+        When(x => x.RequestedHours.HasValue, () =>
+        {
+            RuleFor(x => x.RequestedHours!.Value)
+                .GreaterThan(0)
+                .LessThanOrEqualTo(4)
+                .WithMessage(
+                    "Computer lab duration must be greater than 0 and cannot exceed 4 hours.");
+        });
     }
 }

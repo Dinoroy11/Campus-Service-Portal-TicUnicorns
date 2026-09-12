@@ -1,5 +1,6 @@
 ﻿using CampusServicePortal.Modules.Labs.DTOs;
 using CampusServicePortal.Modules.Labs.Interfaces.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal.Modules.Labs.Controllers;
@@ -91,6 +92,13 @@ public class LabsController : ControllerBase
                 message = ex.Message
             });
         }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     // GET: api/Labs/1/seats
@@ -113,6 +121,13 @@ public class LabsController : ControllerBase
                 message = ex.Message
             });
         }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     // POST: api/Labs/seats
@@ -127,6 +142,50 @@ public class LabsController : ControllerBase
                 await _labService.CreateSeatAsync(dto);
 
             return Ok(seat);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    // PATCH: api/Labs/seats/10/status
+    // Admin can mark a PC as Available, Maintenance or Inactive.
+    // If the PC has upcoming bookings, the service tries to move each
+    // booking to another free PC for the same date/time. If no same-time
+    // replacement exists, that booking is cancelled and the student is notified.
+    [HttpPatch("seats/{labSeatId:int}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<LabSeatStatusUpdateResultDto>>
+        UpdateSeatStatus(
+            int labSeatId,
+            [FromBody] UpdateLabSeatStatusDto dto)
+    {
+        try
+        {
+            var result =
+                await _labService.UpdateSeatStatusAsync(
+                    labSeatId,
+                    dto);
+
+            return Ok(result);
         }
         catch (KeyNotFoundException ex)
         {
@@ -210,14 +269,19 @@ public class LabsController : ControllerBase
         }
     }
 
-    // GET:
-    // api/Labs/1/availability?timeSlotId=2&bookingDate=2026-09-10
+    // SCIENCE LAB example:
+    // GET /api/Labs/1/availability?timeSlotId=1&bookingDate=2026-09-13
+    //
+    // COMPUTER LAB example:
+    // GET /api/Labs/2/availability?timeSlotId=2&bookingDate=2026-09-13&requestedStartTime=09:00:00&requestedHours=4
     [HttpGet("{labId:int}/availability")]
     public async Task<ActionResult<LabAvailabilityDto>>
         GetAvailability(
             int labId,
             [FromQuery] int timeSlotId,
-            [FromQuery] DateTime bookingDate)
+            [FromQuery] DateTime bookingDate,
+            [FromQuery] TimeSpan? requestedStartTime = null,
+            [FromQuery] double? requestedHours = null)
     {
         try
         {
@@ -225,7 +289,9 @@ public class LabsController : ControllerBase
                 await _labService.GetAvailabilityAsync(
                     labId,
                     timeSlotId,
-                    bookingDate);
+                    bookingDate,
+                    requestedStartTime,
+                    requestedHours);
 
             return Ok(availability);
         }
@@ -236,9 +302,26 @@ public class LabsController : ControllerBase
                 message = ex.Message
             });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     // POST: api/Labs/bookings
+    //
+    // Science: LabSeatId / RequestedStartTime / RequestedHours are not required.
+    // Computer: all three are required, duration <= 4 hours.
     [HttpPost("bookings")]
     public async Task<ActionResult<LabBookingDto>>
         CreateBooking(

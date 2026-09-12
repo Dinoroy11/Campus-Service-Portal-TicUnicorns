@@ -13,6 +13,14 @@ public class CreateLabValidator : AbstractValidator<CreateLabDto>
             .MaximumLength(150)
             .WithMessage("Lab name cannot exceed 150 characters.");
 
+        RuleFor(x => x.LabType)
+            .NotEmpty()
+            .WithMessage("Lab type is required.")
+            .Must(type =>
+                type.Equals("Science", StringComparison.OrdinalIgnoreCase) ||
+                type.Equals("Computer", StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Lab type must be Science or Computer.");
+
         RuleFor(x => x.Capacity)
             .GreaterThan(0)
             .WithMessage("Lab capacity must be greater than zero.");

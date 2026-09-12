@@ -16,6 +16,11 @@ public class LabConfiguration : IEntityTypeConfiguration<Lab>
             .IsRequired()
             .HasMaxLength(150);
 
+        builder.Property(x => x.LabType)
+            .IsRequired()
+            .HasMaxLength(20)
+            .HasDefaultValue("Science");
+
         builder.Property(x => x.Capacity)
             .IsRequired();
 

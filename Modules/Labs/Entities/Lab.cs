@@ -6,6 +6,9 @@ public class Lab
 
     public string LabName { get; set; } = string.Empty;
 
+    // Supported values: Science, Computer
+    public string LabType { get; set; } = "Science";
+
     public int Capacity { get; set; }
 
     public string Description { get; set; } = string.Empty;

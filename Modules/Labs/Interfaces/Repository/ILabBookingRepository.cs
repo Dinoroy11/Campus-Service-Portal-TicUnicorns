@@ -13,7 +13,17 @@ public interface ILabBookingRepository
         int timeSlotId,
         DateTime bookingDate);
 
+    Task<List<LabBooking>> GetOverlappingAsync(
+        int labId,
+        DateTime bookingDate,
+        TimeSpan startTime,
+        TimeSpan endTime);
+
     Task<LabBooking?> GetByIdAsync(int labBookingId);
+
+    Task<List<LabBooking>> GetActiveUpcomingBySeatAsync(
+        int labSeatId,
+        DateTime nowUtc);
 
     Task<LabBooking> CreateAsync(LabBooking booking);
 

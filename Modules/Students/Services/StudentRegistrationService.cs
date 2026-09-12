@@ -50,21 +50,32 @@ public class StudentRegistrationService : IStudentRegistrationService
     // SEND OTP
     // =========================================================
 
-    public async Task SendOtpAsync(StudentRegistrationDto dto)
+    public async Task SendOtpAsync(
+        StudentRegistrationDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.UniversityStudentId))
+        if (dto is null)
+        {
+            throw new ArgumentNullException(nameof(dto));
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                dto.UniversityStudentId))
         {
             throw new ArgumentException(
                 "University Student ID is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(dto.MobileNumber))
+        if (string.IsNullOrWhiteSpace(
+                dto.MobileNumber))
         {
             throw new ArgumentException(
                 "Mobile number is required.");
         }
 
-        // 1. Find student in Master Student List
+        // =====================================================
+        // 1. FIND MASTER STUDENT
+        // =====================================================
+
         var masterStudent =
             await _masterListRepository
                 .GetByUniversityStudentIdAsync(
@@ -76,36 +87,68 @@ public class StudentRegistrationService : IStudentRegistrationService
                 "Student was not found in the master student list.");
         }
 
-        // 2. Check student is active
+        // =====================================================
+        // 2. MASTER STUDENT MUST BE ACTIVE
+        // =====================================================
+
         if (!masterStudent.IsActive)
         {
             throw new InvalidOperationException(
                 "Student is not active.");
         }
 
-        // 3. Verify mobile number
-        if (masterStudent.MobileNumber != dto.MobileNumber)
+        // =====================================================
+        // 3. MOBILE NUMBER MUST MATCH MASTER LIST
+        // =====================================================
+
+        if (!string.Equals(
+                masterStudent.MobileNumber,
+                dto.MobileNumber,
+                StringComparison.Ordinal))
         {
             throw new UnauthorizedAccessException(
                 "Mobile number does not match the registered student record.");
         }
 
-        // 4. Check whether Student profile already exists
-        if (await _studentRepository
-            .ExistsByMasterStudentIdAsync(
-                masterStudent.MasterStudentId))
-        {
-            throw new InvalidOperationException(
-                "Student is already registered.");
-        }
+        // =====================================================
+        // 4. FIND EXISTING USER
+        // =====================================================
 
-        // 5. Find existing User
         var user =
             await _userRepository
                 .GetByUsernameAsync(
                     masterStudent.UniversityStudentId);
 
-        // 6. Create User if it does not exist
+        // =====================================================
+        // 5. CHECK WHETHER STUDENT PROFILE EXISTS
+        // =====================================================
+
+        var studentProfileExists =
+            await _studentRepository
+                .ExistsByMasterStudentIdAsync(
+                    masterStudent.MasterStudentId);
+
+        // =====================================================
+        // 6. COMPLETED STUDENT MUST NOT REGISTER AGAIN
+        //
+        // IMPORTANT:
+        // If profile exists BUT MustChangePassword = true,
+        // onboarding is still incomplete.
+        // We allow OTP resend so the student does not get stuck.
+        // =====================================================
+
+        if (studentProfileExists &&
+            user is not null &&
+            !user.MustChangePassword)
+        {
+            throw new InvalidOperationException(
+                "Student is already registered.");
+        }
+
+        // =====================================================
+        // 7. CREATE USER IF FIRST ATTEMPT
+        // =====================================================
+
         if (user is null)
         {
             user = new User
@@ -122,9 +165,9 @@ public class StudentRegistrationService : IStudentRegistrationService
 
                 MustChangePassword = true,
 
-                // Temporary password value.
-                // Permanent password will be set
-                // after first OTP verification.
+                // Temporary unusable value.
+                // Permanent password will be created
+                // after OTP verification.
                 PasswordHash =
                     Guid.NewGuid().ToString(),
 
@@ -136,26 +179,39 @@ public class StudentRegistrationService : IStudentRegistrationService
         }
         else
         {
-            // Existing user should not already be verified
-            if (user.IsPhoneVerified)
+            // If permanent password was already created,
+            // registration is already complete.
+            if (!user.MustChangePassword)
             {
                 throw new InvalidOperationException(
-                    "Student phone number is already verified.");
+                    "Student is already registered.");
             }
 
-            // Keep registered master-list number
+            // This is an incomplete first-login attempt.
+            // Allow a fresh OTP.
             user.PhoneNumber =
                 masterStudent.MobileNumber;
+
+            // Fresh OTP must be verified again.
+            user.IsPhoneVerified = false;
+
+            user.MustChangePassword = true;
 
             await _userRepository.UpdateAsync(user);
         }
 
-        // 7. Generate OTP
+        // =====================================================
+        // 8. GENERATE OTP
+        // =====================================================
+
         var otp =
             await _otpService.GenerateAsync(
                 user.UserId);
 
-        // 8. Send OTP through Notify.lk
+        // =====================================================
+        // 9. SEND OTP
+        // =====================================================
+
         await _smsService.SendAsync(
             masterStudent.MobileNumber,
             $"Your Campus Service Portal OTP is {otp}. It is valid for 5 minutes.");
@@ -163,7 +219,7 @@ public class StudentRegistrationService : IStudentRegistrationService
 
 
     // =========================================================
-    // VERIFY OTP + CREATE PASSWORD SETUP TOKEN
+    // VERIFY OTP
     // =========================================================
 
     public async Task<PasswordSetupResponseDto> VerifyOtpAsync(
@@ -171,13 +227,15 @@ public class StudentRegistrationService : IStudentRegistrationService
         string mobileNumber,
         string otp)
     {
-        if (string.IsNullOrWhiteSpace(universityStudentId))
+        if (string.IsNullOrWhiteSpace(
+                universityStudentId))
         {
             throw new ArgumentException(
                 "University Student ID is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(mobileNumber))
+        if (string.IsNullOrWhiteSpace(
+                mobileNumber))
         {
             throw new ArgumentException(
                 "Mobile number is required.");
@@ -190,7 +248,7 @@ public class StudentRegistrationService : IStudentRegistrationService
         }
 
         // =====================================================
-        // 1. Find Student in Master Student List
+        // 1. FIND MASTER STUDENT
         // =====================================================
 
         var masterStudent =
@@ -205,7 +263,7 @@ public class StudentRegistrationService : IStudentRegistrationService
         }
 
         // =====================================================
-        // 2. Check Master Student is Active
+        // 2. MASTER STUDENT MUST BE ACTIVE
         // =====================================================
 
         if (!masterStudent.IsActive)
@@ -215,29 +273,20 @@ public class StudentRegistrationService : IStudentRegistrationService
         }
 
         // =====================================================
-        // 3. Verify Mobile Number
+        // 3. MOBILE MUST MATCH MASTER LIST
         // =====================================================
 
-        if (masterStudent.MobileNumber != mobileNumber)
+        if (!string.Equals(
+                masterStudent.MobileNumber,
+                mobileNumber,
+                StringComparison.Ordinal))
         {
             throw new UnauthorizedAccessException(
                 "Mobile number does not match the registered student record.");
         }
 
         // =====================================================
-        // 4. Check Student Profile
-        // =====================================================
-
-        if (await _studentRepository
-            .ExistsByMasterStudentIdAsync(
-                masterStudent.MasterStudentId))
-        {
-            throw new InvalidOperationException(
-                "Student is already registered.");
-        }
-
-        // =====================================================
-        // 5. Find User
+        // 4. FIND USER
         // =====================================================
 
         var user =
@@ -248,11 +297,29 @@ public class StudentRegistrationService : IStudentRegistrationService
         if (user is null)
         {
             throw new KeyNotFoundException(
-                "Student account was not found.");
+                "Student account was not found. Send OTP first.");
         }
 
         // =====================================================
-        // 6. Verify OTP
+        // 5. CHECK EXISTING STUDENT PROFILE
+        // =====================================================
+
+        var studentProfileExists =
+            await _studentRepository
+                .ExistsByMasterStudentIdAsync(
+                    masterStudent.MasterStudentId);
+
+        // If password setup already completed,
+        // student registration is fully complete.
+        if (studentProfileExists &&
+            !user.MustChangePassword)
+        {
+            throw new InvalidOperationException(
+                "Student is already registered.");
+        }
+
+        // =====================================================
+        // 6. VERIFY OTP
         // =====================================================
 
         await _otpService.VerifyAsync(
@@ -260,70 +327,77 @@ public class StudentRegistrationService : IStudentRegistrationService
             otp);
 
         // =====================================================
-        // 7. Activate User
+        // 7. ACTIVATE USER
         // =====================================================
 
+        user.PhoneNumber =
+            masterStudent.MobileNumber;
+
         user.IsPhoneVerified = true;
+
         user.IsActive = true;
 
-        // Student still needs to create permanent password.
+        // Still needs permanent password.
         user.MustChangePassword = true;
 
         await _userRepository.UpdateAsync(user);
 
         // =====================================================
-        // 8. Create Student Profile
+        // 8. CREATE STUDENT PROFILE ONLY ONCE
         // =====================================================
 
-        var (firstName, lastName) =
-            SplitStudentName(
-                masterStudent.StudentName);
-
-        var student = new Student
+        if (!studentProfileExists)
         {
-            MasterStudentId =
-                masterStudent.MasterStudentId,
+            var (firstName, lastName) =
+                SplitStudentName(
+                    masterStudent.StudentName);
 
-            UserId =
-                user.UserId,
+            var student = new Student
+            {
+                MasterStudentId =
+                    masterStudent.MasterStudentId,
 
-            FirstName =
-                firstName,
+                UserId =
+                    user.UserId,
 
-            LastName =
-                lastName,
+                FirstName =
+                    firstName,
 
-            PhoneNumber =
-                masterStudent.MobileNumber,
+                LastName =
+                    lastName,
 
-            Email =
-                user.Email,
+                PhoneNumber =
+                    masterStudent.MobileNumber,
 
-            DateOfBirth = null,
+                Email =
+                    user.Email,
 
-            Gender = null,
+                DateOfBirth = null,
 
-            AdmissionDate =
-                DateTime.UtcNow,
+                Gender = null,
 
-            IsActive = true,
+                AdmissionDate =
+                    DateTime.UtcNow,
 
-            CreatedAt =
-                DateTime.UtcNow
-        };
+                IsActive = true,
 
-        await _studentRepository.AddAsync(
-            student);
+                CreatedAt =
+                    DateTime.UtcNow
+            };
+
+            await _studentRepository.AddAsync(
+                student);
+        }
 
         // =====================================================
-        // 9. Find Student Role
+        // 9. GET STUDENT ROLE
         // =====================================================
 
         var studentRole =
             await GetStudentRoleAsync();
 
         // =====================================================
-        // 10. Assign Student Role
+        // 10. ASSIGN STUDENT ROLE ONLY ONCE
         // =====================================================
 
         var alreadyAssigned =
@@ -346,24 +420,27 @@ public class StudentRegistrationService : IStudentRegistrationService
                     DateTime.UtcNow
             };
 
-            await _userRoleRepository.AddAsync(
-                userRole);
+            await _userRoleRepository
+                .AddAsync(userRole);
         }
+
         // =====================================================
         // 11. CREATE PASSWORD SETUP TOKEN
         // =====================================================
 
         var setupToken =
             await _authService
-                .CreatePasswordSetupTokenAsync(user);
+                .CreatePasswordSetupTokenAsync(
+                    user);
 
         // =====================================================
-        // 12. RETURN PASSWORD SETUP RESPONSE
+        // 12. RETURN TOKEN
         // =====================================================
 
         return new PasswordSetupResponseDto
         {
-            SetupToken = setupToken,
+            SetupToken =
+                setupToken,
 
             ExpiresAt =
                 DateTime.UtcNow.AddMinutes(10),
@@ -381,7 +458,8 @@ public class StudentRegistrationService : IStudentRegistrationService
     private async Task<Role> GetStudentRoleAsync()
     {
         var roles =
-            await _roleRepository.GetAllAsync();
+            await _roleRepository
+                .GetAllAsync();
 
         var studentRole =
             roles.FirstOrDefault(
@@ -412,9 +490,11 @@ public class StudentRegistrationService : IStudentRegistrationService
     private static (
         string FirstName,
         string LastName)
-        SplitStudentName(string fullName)
+        SplitStudentName(
+            string fullName)
     {
-        if (string.IsNullOrWhiteSpace(fullName))
+        if (string.IsNullOrWhiteSpace(
+                fullName))
         {
             return (
                 "Student",

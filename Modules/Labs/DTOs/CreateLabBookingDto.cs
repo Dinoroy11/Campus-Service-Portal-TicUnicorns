@@ -6,9 +6,19 @@ public class CreateLabBookingDto
 
     public int TimeSlotId { get; set; }
 
+    // Required for Computer labs. Must belong to the selected lab.
+    // Science labs do not use a seat.
     public int? LabSeatId { get; set; }
 
     public int StudentId { get; set; }
 
     public DateTime BookingDate { get; set; }
+
+    // Computer lab only.
+    // Example: 09:00:00
+    public TimeSpan? RequestedStartTime { get; set; }
+
+    // Computer lab only. Maximum 4 hours.
+    // Fractional values such as 1.5 are supported.
+    public double? RequestedHours { get; set; }
 }

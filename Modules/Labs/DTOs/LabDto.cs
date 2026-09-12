@@ -6,6 +6,8 @@ public class LabDto
 
     public string LabName { get; set; } = string.Empty;
 
+    public string LabType { get; set; } = string.Empty;
+
     public int Capacity { get; set; }
 
     public string Description { get; set; } = string.Empty;

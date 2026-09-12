@@ -7,4 +7,8 @@ public interface IUserRoleRepository
     Task<bool> ExistsAsync(int userId, int roleId);
 
     Task AddAsync(UserRole userRole);
+
+    Task<string?> GetRoleNameByUserIdAsync(int userId);
+
+   
 }
