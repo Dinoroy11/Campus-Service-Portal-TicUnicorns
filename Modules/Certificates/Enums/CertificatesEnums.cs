@@ -1,19 +1,16 @@
-﻿namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Enums
-{
-    public enum CertificateType
-    {
-        Bonafide,
-        CourseCompletion,
-        Character,
-        Transcript,
-        Other
-    }
+﻿namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Enums;
 
-    public enum CertificateStatus
-    {
-        Pending,
-        Processing,
-        Done,
-        Rejected
-    }
+public enum CertificateType
+{
+    Bonafide,
+    Transcript,
+    CompletionLetter
+}
+
+public enum CertificateStatus
+{
+    Pending,
+    Approved,
+    Rejected,
+    Ready
 }

@@ -1,35 +1,35 @@
 ﻿using CampusServicePortal_TicUnicorns.Modules.Certificates.DTOs;
+using CampusServicePortal_TicUnicorns.Modules.Certificates.Enums;
 using FluentValidation;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Validators
+namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Validators;
+
+public class CreateCertificateValidator : AbstractValidator<CreateCertificateDto>
 {
-    public class CreateCertificateValidator : AbstractValidator<CreateCertificateDto>
+    public CreateCertificateValidator()
     {
-        public CreateCertificateValidator()
-        {
-            RuleFor(x => x.StudentId)
-                .GreaterThan(0)
-                .WithMessage("Student ID must be greater than 0.");
+        RuleFor(x => x.CertificateType)
+            .NotEmpty()
+            .WithMessage("Certificate type is required.")
+            .Must(IsValidCertificateType)
+            .WithMessage("Allowed certificate types: Bonafide, Transcript, CompletionLetter.");
 
-            RuleFor(x => x.CertificateType)
-                .NotEmpty()
-                .WithMessage("Certificate type is required.")
-                .Must(IsValidCertificateType)
-                .WithMessage("Invalid certificate type.");
+        RuleFor(x => x.Purpose)
+            .NotEmpty()
+            .WithMessage("Purpose is required.")
+            .MaximumLength(500)
+            .WithMessage("Purpose cannot exceed 500 characters.");
+    }
 
-            RuleFor(x => x.Purpose)
-                .NotEmpty()
-                .WithMessage("Purpose is required.")
-                .MaximumLength(500)
-                .WithMessage("Purpose cannot exceed 500 characters.");
-        }
+    private static bool IsValidCertificateType(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
 
-        private bool IsValidCertificateType(string certificateType)
-        {
-            return Enum.TryParse<Enums.CertificateType>(
-                certificateType,
-                true,
-                out _);
-        }
+        var compact = value.Trim()
+            .Replace(" ", string.Empty)
+            .Replace("-", string.Empty);
+
+        return Enum.TryParse<CertificateType>(compact, true, out _);
     }
 }

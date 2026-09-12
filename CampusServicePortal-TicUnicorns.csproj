@@ -37,7 +37,6 @@
 		<Folder Include="Modules\Complaints\" />
 		<Folder Include="Modules\DashBoards\" />
 		<Folder Include="Modules\Laundry\" />
-		<Folder Include="Modules\Gym\" />
 		<Folder Include="Modules\Leave\" />
 		<Folder Include="Modules\AuditLogs\" />
 		<Folder Include="Modules\Sports\" />

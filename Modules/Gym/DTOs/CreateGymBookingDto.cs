@@ -1,9 +1,9 @@
-﻿namespace CampusServicePortal.Modules.Gym.DTOs
-{
-    public class CreateGymBookingDto
-    {
-        public int SlotId { get; set; }
+﻿using System.ComponentModel.DataAnnotations;
 
-        public int UserId { get; set; }
-    }
+namespace CampusServicePortal.Modules.Gym.DTOs;
+
+public class CreateGymBookingRequestDto
+{
+    [Range(1, int.MaxValue)]
+    public int SlotId { get; set; }
 }

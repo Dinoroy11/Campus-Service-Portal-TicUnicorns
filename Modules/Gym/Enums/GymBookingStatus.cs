@@ -1,8 +1,10 @@
-﻿namespace CampusServicePortal.Modules.Gym.Enums
+﻿namespace CampusServicePortal.Modules.Gym.Enums;
+
+public enum GymBookingStatus
 {
-    public enum GymBookingStatus
-    {
-        Booked = 1,
-        Cancelled = 2
-    }
+    Held = 1,
+    Confirmed = 2,
+    Completed = 3,
+    Cancelled = 4,
+    Expired = 5
 }

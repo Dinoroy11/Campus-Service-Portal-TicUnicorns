@@ -1,26 +1,21 @@
 ﻿using CampusServicePortal_TicUnicorns.Modules.Certificates.Entities;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Repository
+namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Repository;
+
+public interface ICertificatesRepository
 {
-    public interface ICertificatesRepository
-    {
-        Task<IEnumerable<CertificatesEntities>> GetAllAsync();
+    Task<IReadOnlyList<CertificatesEntities>> GetAllAsync();
 
-        Task<CertificatesEntities?> GetByIdAsync(int certificateId);
+    Task<CertificatesEntities?> GetByIdAsync(int certificateId);
 
-        Task<IEnumerable<CertificatesEntities>> GetByStudentIdAsync(int studentId);
+    Task<IReadOnlyList<CertificatesEntities>> GetByStudentIdAsync(int studentId);
 
-        Task<CertificatesEntities> CreateAsync(
-            CertificatesEntities certificate);
+    Task<bool> HasPendingRequestAsync(
+        int studentId,
+        string certificateType,
+        int? excludeCertificateId = null);
 
-        Task<bool> UpdateAsync(
-            CertificatesEntities certificate);
+    Task<CertificatesEntities> CreateAsync(CertificatesEntities certificate);
 
-        Task<bool> UpdateStatusAsync(
-            int certificateId,
-            string status,
-            string? rejectionReason);
-
-        Task<bool> DeleteAsync(int certificateId);
-    }
+    Task UpdateAsync(CertificatesEntities certificate);
 }

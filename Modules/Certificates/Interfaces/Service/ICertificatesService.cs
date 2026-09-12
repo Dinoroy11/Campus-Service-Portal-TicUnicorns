@@ -1,27 +1,29 @@
 ﻿using CampusServicePortal_TicUnicorns.Modules.Certificates.DTOs;
 
-namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Service
+namespace CampusServicePortal_TicUnicorns.Modules.Certificates.Interfaces.Service;
+
+public interface ICertificatesService
 {
-    public interface ICertificatesService
-    {
-        Task<IEnumerable<CertificateResponseDto>> GetAllAsync();
+    Task<IReadOnlyList<CertificateResponseDto>> GetAllAsync();
 
-        Task<CertificateResponseDto?> GetByIdAsync(int certificateId);
+    Task<CertificateResponseDto?> GetByIdAsync(int certificateId);
 
-        Task<IEnumerable<CertificateResponseDto>> GetByStudentIdAsync(
-            int studentId);
+    Task<IReadOnlyList<CertificateResponseDto>> GetMyAsync(int userId);
 
-        Task<CertificateResponseDto> CreateAsync(
-            CreateCertificateDto dto);
+    Task<CertificateResponseDto?> GetMyByIdAsync(
+        int userId,
+        int certificateId);
 
-        Task<bool> UpdateAsync(
-            int certificateId,
-            UpdateCertificateDto dto);
+    Task<CertificateResponseDto> CreateAsync(
+        int userId,
+        CreateCertificateDto dto);
 
-        Task<bool> UpdateStatusAsync(
-            int certificateId,
-            UpdateCertificateStatusDto dto);
+    Task<CertificateResponseDto> UpdateMyAsync(
+        int userId,
+        int certificateId,
+        UpdateCertificateDto dto);
 
-        Task<bool> DeleteAsync(int certificateId);
-    }
+    Task<CertificateResponseDto> UpdateStatusAsync(
+        int certificateId,
+        UpdateCertificateStatusDto dto);
 }
