@@ -3,82 +3,71 @@ using CampusServicePortal.Modules.SystemSettings.Interfaces.Repository;
 using CampusServicePortal_TicUnicorns.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace CampusServicePortal.Modules.SystemSettings.Repositories
+namespace CampusServicePortal.Modules.SystemSettings.Repositories;
+
+public class SystemSettingRepository : ISystemSettingRepository
 {
-    public class SystemSettingRepository : ISystemSettingRepository
+    private readonly CampusDbContext _context;
+
+    public SystemSettingRepository(CampusDbContext context)
     {
-        private readonly CampusDbContext _context;
+        _context = context;
+    }
 
-        public SystemSettingRepository(CampusDbContext context)
-        {
-            _context = context;
-        }
+    public async Task<IEnumerable<SystemSetting>> GetAllSystemSettingsAsync()
+    {
+        return await _context.SystemSettings
+            .AsNoTracking()
+            .OrderBy(s => s.Key)
+            .ToListAsync();
+    }
 
-        public async Task<IEnumerable<SystemSetting>> GetAllSystemSettingsAsync()
-        {
-            return await _context.SystemSettings
-                .AsNoTracking()
-                .ToListAsync();
-        }
+    public async Task<SystemSetting?> GetSystemSettingByIdAsync(int settingId)
+    {
+        return await _context.SystemSettings
+            .FirstOrDefaultAsync(s => s.SettingId == settingId);
+    }
 
-        public async Task<SystemSetting?> GetSystemSettingByIdAsync(int settingId)
-        {
-            return await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.SettingId == settingId);
-        }
+    public async Task<SystemSetting?> GetSystemSettingByKeyAsync(string key)
+    {
+        var normalizedKey = key.Trim();
 
-        public async Task<SystemSetting?> GetSystemSettingByKeyAsync(string key)
-        {
-            return await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.Key == key);
-        }
+        return await _context.SystemSettings
+            .FirstOrDefaultAsync(s => s.Key == normalizedKey);
+    }
 
-        public async Task<SystemSetting> CreateSystemSettingAsync(
-            SystemSetting setting)
-        {
-            setting.IsActive = true;
+    public async Task<bool> KeyExistsAsync(
+        string key,
+        int? excludeSettingId = null)
+    {
+        var normalizedKey = key.Trim();
 
-            await _context.SystemSettings.AddAsync(setting);
-            await _context.SaveChangesAsync();
+        return await _context.SystemSettings.AnyAsync(s =>
+            s.Key == normalizedKey &&
+            (!excludeSettingId.HasValue || s.SettingId != excludeSettingId.Value));
+    }
 
-            return setting;
-        }
+    public async Task<SystemSetting> CreateSystemSettingAsync(SystemSetting setting)
+    {
+        await _context.SystemSettings.AddAsync(setting);
+        await _context.SaveChangesAsync();
+        return setting;
+    }
 
-        public async Task<SystemSetting?> UpdateSystemSettingAsync(
-            SystemSetting setting)
-        {
-            var existingSetting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.SettingId == setting.SettingId);
+    public async Task<SystemSetting?> UpdateSystemSettingAsync(SystemSetting setting)
+    {
+        var existing = await _context.SystemSettings
+            .FirstOrDefaultAsync(s => s.SettingId == setting.SettingId);
 
-            if (existingSetting == null)
-            {
-                return null;
-            }
+        if (existing == null)
+            return null;
 
-            existingSetting.Key = setting.Key;
-            existingSetting.Value = setting.Value;
-            existingSetting.Description = setting.Description;
-            existingSetting.IsActive = setting.IsActive;
+        existing.Key = setting.Key;
+        existing.Value = setting.Value;
+        existing.Description = setting.Description;
+        existing.IsActive = setting.IsActive;
 
-            await _context.SaveChangesAsync();
-
-            return existingSetting;
-        }
-
-        public async Task<bool> DeleteSystemSettingAsync(int settingId)
-        {
-            var setting = await _context.SystemSettings
-                .FirstOrDefaultAsync(s => s.SettingId == settingId);
-
-            if (setting == null)
-            {
-                return false;
-            }
-
-            _context.SystemSettings.Remove(setting);
-            await _context.SaveChangesAsync();
-
-            return true;
-        }
+        await _context.SaveChangesAsync();
+        return existing;
     }
 }

@@ -1,15 +1,10 @@
-﻿namespace CampusServicePortal.Modules.SystemSettings.DTOs
+﻿namespace CampusServicePortal.Modules.SystemSettings.DTOs;
+
+public class SystemSettingDto
 {
-    public class SystemSettingDto
-    {
-        public int SettingId { get; set; }
-
-        public string Key { get; set; } = string.Empty;
-
-        public string Value { get; set; } = string.Empty;
-
-        public string Description { get; set; } = string.Empty;
-
-        public bool IsActive { get; set; }
-    }
+    public int SettingId { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
 }

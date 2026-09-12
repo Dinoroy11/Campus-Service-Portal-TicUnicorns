@@ -37,7 +37,6 @@
 		<Folder Include="Modules\DashBoards\" />
 		<Folder Include="Modules\Laundry\" />
 		<Folder Include="Modules\AuditLogs\" />
-		<Folder Include="Modules\SystemSettings\" />
 		<Folder Include="Modules\Notifications\" />
 	</ItemGroup>
 

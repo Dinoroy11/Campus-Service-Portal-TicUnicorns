@@ -21,11 +21,11 @@ public class AuditLogService : IAuditLogService
         var auditLog = new AuditLog
         {
             UserId = dto.UserId,
-            EntityType = dto.EntityType,
+            EntityType = dto.EntityType.Trim(),
             EntityId = dto.EntityId,
-            Action = dto.Action,
-            OldValue = dto.OldValue,
-            NewValue = dto.NewValue,
+            Action = dto.Action.Trim(),
+            OldValue = NormalizeOptionalValue(dto.OldValue),
+            NewValue = NormalizeOptionalValue(dto.NewValue),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -34,15 +34,32 @@ public class AuditLogService : IAuditLogService
         return MapToDto(auditLog);
     }
 
+    public Task<AuditLogDto> LogAsync(
+        int userId,
+        string entityType,
+        int entityId,
+        string action,
+        string? oldValue = null,
+        string? newValue = null)
+    {
+        return CreateAsync(new AuditLogDto
+        {
+            UserId = userId,
+            EntityType = entityType,
+            EntityId = entityId,
+            Action = action,
+            OldValue = oldValue,
+            NewValue = newValue
+        });
+    }
+
     public async Task<IEnumerable<AuditLogDto>> GetAllAsync()
     {
         var auditLogs = await _auditLogRepository.GetAllAsync();
-
         return auditLogs.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<AuditLogDto>> GetByUserIdAsync(
-        int userId)
+    public async Task<IEnumerable<AuditLogDto>> GetByUserIdAsync(int userId)
     {
         if (userId <= 0)
         {
@@ -58,6 +75,11 @@ public class AuditLogService : IAuditLogService
 
     private static void ValidateAuditLog(AuditLogDto dto)
     {
+        if (dto == null)
+        {
+            throw new ArgumentNullException(nameof(dto));
+        }
+
         if (dto.UserId <= 0)
         {
             throw new ArgumentException(
@@ -68,6 +90,12 @@ public class AuditLogService : IAuditLogService
         {
             throw new ArgumentException(
                 "Entity type is required.");
+        }
+
+        if (dto.EntityType.Trim().Length > 100)
+        {
+            throw new ArgumentException(
+                "Entity type cannot exceed 100 characters.");
         }
 
         if (dto.EntityId <= 0)
@@ -82,12 +110,25 @@ public class AuditLogService : IAuditLogService
                 "Audit action is required.");
         }
 
+        if (dto.Action.Trim().Length > 100)
+        {
+            throw new ArgumentException(
+                "Audit action cannot exceed 100 characters.");
+        }
+
         if (ContainsSensitiveValue(dto.OldValue) ||
             ContainsSensitiveValue(dto.NewValue))
         {
             throw new ArgumentException(
                 "Sensitive values must not be stored in audit logs.");
         }
+    }
+
+    private static string? NormalizeOptionalValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
     }
 
     private static bool ContainsSensitiveValue(string? value)
@@ -102,15 +143,17 @@ public class AuditLogService : IAuditLogService
         var sensitiveKeywords = new[]
         {
             "password",
+            "passwordhash",
             "otp",
             "token",
             "secret",
             "access_token",
-            "refresh_token"
+            "refresh_token",
+            "accesstoken",
+            "refreshtoken"
         };
 
-        return sensitiveKeywords.Any(
-            normalizedValue.Contains);
+        return sensitiveKeywords.Any(normalizedValue.Contains);
     }
 
     private static AuditLogDto MapToDto(AuditLog auditLog)

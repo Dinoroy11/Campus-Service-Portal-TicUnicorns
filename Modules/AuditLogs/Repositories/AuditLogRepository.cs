@@ -24,6 +24,8 @@ public class AuditLogRepository : IAuditLogRepository
     {
         return await _context.AuditLogs
             .AsNoTracking()
+            .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.AuditLogId)
             .ToListAsync();
     }
 
@@ -32,6 +34,8 @@ public class AuditLogRepository : IAuditLogRepository
         return await _context.AuditLogs
             .AsNoTracking()
             .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.AuditLogId)
             .ToListAsync();
     }
 }

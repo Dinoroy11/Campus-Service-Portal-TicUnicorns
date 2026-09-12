@@ -2,12 +2,8 @@
 
 namespace CampusServicePortal.Modules.SystemSettings.DTOs;
 
-public class CreateSystemSettingDto
+public class UpdateSystemSettingDto
 {
-    [Required]
-    [StringLength(120)]
-    public string Key { get; set; } = string.Empty;
-
     [Required]
     [StringLength(1000)]
     public string Value { get; set; } = string.Empty;

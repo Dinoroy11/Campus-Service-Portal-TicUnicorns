@@ -1,6 +1,7 @@
 ﻿using CampusServicePortal.Modules.Identity.DTOs;
 using CampusServicePortal.Modules.Identity.Interfaces.Service;
-
+using CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Identity.Controllers;
@@ -10,10 +11,14 @@ namespace CampusServicePortal_TicUnicorns.Modules.Identity.Controllers;
 public class IdentityController : ControllerBase
 {
     private readonly IIdentityService _identityService;
+    private readonly IAuditLogService _auditLogService;
 
-    public IdentityController(IIdentityService identityService)
+    public IdentityController(
+        IIdentityService identityService,
+        IAuditLogService auditLogService)
     {
         _identityService = identityService;
+        _auditLogService = auditLogService;
     }
 
     // GET: api/Identity/users
@@ -134,10 +139,12 @@ public class IdentityController : ControllerBase
     }
 
     // GET: api/Identity/audit-logs
+    // Admin only. Uses the real AuditLog service instead of returning an empty list.
     [HttpGet("audit-logs")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<AuditLogDto>>> GetAuditLogs()
     {
-        var auditLogs = await _identityService.GetAuditLogsAsync();
+        var auditLogs = await _auditLogService.GetAllAsync();
         return Ok(auditLogs);
     }
 }

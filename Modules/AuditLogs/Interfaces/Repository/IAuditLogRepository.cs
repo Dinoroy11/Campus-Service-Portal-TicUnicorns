@@ -1,6 +1,5 @@
 ﻿using CampusServicePortal.Modules.Identity.Entities;
 
-
 namespace CampusServicePortal_TicUnicorns.Modules.Identity.Interfaces.Repository;
 
 public interface IAuditLogRepository
