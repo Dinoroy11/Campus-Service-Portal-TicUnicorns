@@ -1,6 +1,5 @@
 ﻿using CampusServicePortal.Modules.Events.Entities;
 using CampusServicePortal_TicUnicorns.Data;
- 
 using Microsoft.EntityFrameworkCore;
 
 namespace CampusServicePortal.Modules.Events.Repositories;
@@ -17,6 +16,17 @@ public class EventRepository : IEventRepository
     public async Task<List<Event>> GetAllAsync()
     {
         return await _context.Set<Event>()
+            .AsNoTracking()
+            .OrderBy(x => x.StartDateTime)
+            .ToListAsync();
+    }
+
+    public async Task<List<Event>> GetByVenueIdAsync(int venueId)
+    {
+        return await _context.Set<Event>()
+            .AsNoTracking()
+            .Where(x => x.VenueId == venueId)
+            .OrderBy(x => x.StartDateTime)
             .ToListAsync();
     }
 
@@ -30,7 +40,6 @@ public class EventRepository : IEventRepository
     {
         _context.Set<Event>().Add(eventEntity);
         await _context.SaveChangesAsync();
-
         return eventEntity;
     }
 

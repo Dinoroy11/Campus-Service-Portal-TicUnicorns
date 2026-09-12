@@ -16,6 +16,7 @@ public class EventRegistrationRepository : IEventRegistrationRepository
     public async Task<List<EventRegistration>> GetAllAsync()
     {
         return await _context.Set<EventRegistration>()
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
     }
 
@@ -29,6 +30,7 @@ public class EventRegistrationRepository : IEventRegistrationRepository
     {
         return await _context.Set<EventRegistration>()
             .Where(er => er.EventId == eventId)
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
     }
 
@@ -36,14 +38,24 @@ public class EventRegistrationRepository : IEventRegistrationRepository
     {
         return await _context.Set<EventRegistration>()
             .Where(er => er.StudentId == studentId)
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
+    }
+
+    public async Task<EventRegistration?> GetByEventAndStudentAsync(
+        int eventId,
+        int studentId)
+    {
+        return await _context.Set<EventRegistration>()
+            .FirstOrDefaultAsync(x =>
+                x.EventId == eventId &&
+                x.StudentId == studentId);
     }
 
     public async Task<EventRegistration> CreateAsync(EventRegistration registration)
     {
         _context.Set<EventRegistration>().Add(registration);
         await _context.SaveChangesAsync();
-
         return registration;
     }
 
