@@ -6,6 +6,8 @@ public class ComplaintDto
 
     public int CategoryId { get; set; }
 
+    public string CategoryName { get; set; } = string.Empty;
+
     public int StudentId { get; set; }
 
     public string Title { get; set; } = string.Empty;

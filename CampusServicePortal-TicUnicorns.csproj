@@ -34,7 +34,6 @@
 		<Folder Include="Common\" />
 		<Folder Include="Modules\Identity\" />
 		<Folder Include="Modules\Certificates\" />
-		<Folder Include="Modules\Complaints\" />
 		<Folder Include="Modules\DashBoards\" />
 		<Folder Include="Modules\Laundry\" />
 		<Folder Include="Modules\Leave\" />

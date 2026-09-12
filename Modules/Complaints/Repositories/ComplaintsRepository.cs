@@ -18,12 +18,15 @@ public class ComplaintRepository : IComplaintRepository
     {
         return await _context.Set<Complaint>()
             .AsNoTracking()
+            .Include(x => x.Category)
+            .OrderByDescending(x => x.CreatedAt)
             .ToListAsync();
     }
 
     public async Task<Complaint?> GetByIdAsync(int complaintId)
     {
         return await _context.Set<Complaint>()
+            .Include(x => x.Category)
             .FirstOrDefaultAsync(x =>
                 x.ComplaintId == complaintId);
     }
@@ -33,7 +36,9 @@ public class ComplaintRepository : IComplaintRepository
     {
         return await _context.Set<Complaint>()
             .AsNoTracking()
+            .Include(x => x.Category)
             .Where(x => x.StudentId == studentId)
+            .OrderByDescending(x => x.CreatedAt)
             .ToListAsync();
     }
 

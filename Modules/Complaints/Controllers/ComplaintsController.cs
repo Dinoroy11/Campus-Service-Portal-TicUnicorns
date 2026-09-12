@@ -1,11 +1,14 @@
-﻿using CampusServicePortal.Modules.Complaints.DTOs;
+﻿using System.Security.Claims;
+using CampusServicePortal.Modules.Complaints.DTOs;
 using CampusServicePortal.Modules.Complaints.Interfaces.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal.Modules.Complaints.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ComplaintsController : ControllerBase
 {
     private readonly IComplaintsService _complaintsService;
@@ -16,153 +19,275 @@ public class ComplaintsController : ControllerBase
     }
 
     // =========================================================
-    // Categories
+    // SHARED: CATEGORIES
     // =========================================================
 
     [HttpGet("categories")]
+    [Authorize(Roles = "Admin,Student")]
     public async Task<IActionResult> GetCategories()
     {
         var categories =
             await _complaintsService.GetAllCategoriesAsync();
 
+        // Students only need categories they can currently use.
+        if (User.IsInRole("Student"))
+            categories = categories.Where(x => x.IsActive).ToList();
+
         return Ok(categories);
     }
 
-    [HttpGet("categories/{id}")]
+    // =========================================================
+    // ADMIN: CATEGORY MANAGEMENT
+    // =========================================================
+
+    [HttpGet("categories/{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetCategory(int id)
     {
         var category =
             await _complaintsService.GetCategoryByIdAsync(id);
 
-        if (category == null)
-            return NotFound();
-
-        return Ok(category);
+        return category == null
+            ? NotFound(new { message = "Complaint category not found." })
+            : Ok(category);
     }
 
     [HttpPost("categories")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateCategory(
-        CreateComplaintCategoryDto dto)
+        [FromBody] CreateComplaintCategoryDto dto)
     {
-        var category =
-            await _complaintsService.CreateCategoryAsync(dto);
+        try
+        {
+            var category =
+                await _complaintsService.CreateCategoryAsync(dto);
 
-        return CreatedAtAction(
-            nameof(GetCategory),
-            new { id = category.ComplaintCategoryId },
-            category);
+            return CreatedAtAction(
+                nameof(GetCategory),
+                new { id = category.ComplaintCategoryId },
+                category);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
-    [HttpPut("categories/{id}")]
+    [HttpPut("categories/{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateCategory(
         int id,
-        CreateComplaintCategoryDto dto)
+        [FromBody] CreateComplaintCategoryDto dto)
     {
         try
         {
             await _complaintsService.UpdateCategoryAsync(id, dto);
-
-            return NoContent();
+            return Ok(new { message = "Complaint category updated successfully." });
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 
     // =========================================================
-    // Complaints
+    // STUDENT: OWN COMPLAINTS
+    // =========================================================
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyComplaints()
+    {
+        try
+        {
+            return Ok(await _complaintsService
+                .GetMyComplaintsAsync(GetCurrentUserId()));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/{id:int}")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyComplaint(int id)
+    {
+        try
+        {
+            var complaint = await _complaintsService
+                .GetMyComplaintByIdAsync(GetCurrentUserId(), id);
+
+            return complaint == null
+                ? NotFound(new { message = "Complaint not found." })
+                : Ok(complaint);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> CreateComplaint(
+        [FromBody] CreateComplaintDto dto)
+    {
+        try
+        {
+            var complaint = await _complaintsService
+                .CreateComplaintAsync(GetCurrentUserId(), dto);
+
+            return Ok(complaint);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:int}/confirm-resolution")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> ConfirmResolution(
+        int id,
+        [FromBody] ConfirmComplaintResolutionDto dto)
+    {
+        try
+        {
+            return Ok(await _complaintsService
+                .ConfirmResolutionAsync(GetCurrentUserId(), id, dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/{id:int}/history")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyComplaintHistory(int id)
+    {
+        try
+        {
+            return Ok(await _complaintsService
+                .GetMyComplaintStatusHistoryAsync(
+                    GetCurrentUserId(), id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // =========================================================
+    // ADMIN: COMPLAINT WORKFLOW
     // =========================================================
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllComplaints()
     {
-        var complaints =
-            await _complaintsService.GetAllComplaintsAsync();
-
-        return Ok(complaints);
+        return Ok(await _complaintsService.GetAllComplaintsAsync());
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetComplaint(int id)
     {
         var complaint =
             await _complaintsService.GetComplaintByIdAsync(id);
 
-        if (complaint == null)
-            return NotFound();
-
-        return Ok(complaint);
+        return complaint == null
+            ? NotFound(new { message = "Complaint not found." })
+            : Ok(complaint);
     }
 
-    [HttpGet("student/{studentId}")]
-    public async Task<IActionResult> GetComplaintsByStudent(
-        int studentId)
-    {
-        var complaints =
-            await _complaintsService
-                .GetComplaintsByStudentIdAsync(studentId);
-
-        return Ok(complaints);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> CreateComplaint(
-        CreateComplaintDto dto)
+    [HttpPatch("{id:int}/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateComplaintStatus(
+        int id,
+        [FromBody] UpdateComplaintDto dto)
     {
         try
         {
-            var complaint =
-                await _complaintsService
-                    .CreateComplaintAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetComplaint),
-                new { id = complaint.ComplaintId },
-                complaint);
+            return Ok(await _complaintsService
+                .UpdateComplaintStatusAsync(
+                    id,
+                    GetCurrentUserId(),
+                    dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateComplaint(
-        int id,
-        UpdateComplaintDto dto)
-    {
-        try
-        {
-            await _complaintsService
-                .UpdateComplaintAsync(id, dto);
-
-            return NoContent();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
-    }
-
-    // =========================================================
-    // Status History
-    // =========================================================
-
-    [HttpGet("{id}/history")]
+    [HttpGet("{id:int}/history")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetComplaintHistory(int id)
     {
         try
         {
-            var history =
-                await _complaintsService
-                    .GetComplaintStatusHistoryAsync(id);
-
-            return Ok(history);
+            return Ok(await _complaintsService
+                .GetComplaintStatusHistoryAsync(id));
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
-            return NotFound();
+            return NotFound(new { message = ex.Message });
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("Invalid user identity.");
+
+        return userId;
     }
 }
