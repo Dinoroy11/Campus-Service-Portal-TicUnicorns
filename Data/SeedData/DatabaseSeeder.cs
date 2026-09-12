@@ -32,7 +32,29 @@ public static class DatabaseSeeder
         }
 
         // ==============================
-        // 2. Seed Admin User
+        // 2. Seed Student Role
+        // ==============================
+
+        var studentRole = await context.Roles
+            .FirstOrDefaultAsync(r => r.RoleName == "Student");
+
+        if (studentRole is null)
+        {
+            studentRole = new Role
+            {
+                RoleName = "Student",
+                Description = "Student user",
+                IsSystemRole = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await context.Roles.AddAsync(studentRole);
+            await context.SaveChangesAsync();
+        }
+
+        // ==============================
+        // 3. Seed Admin User
         // ==============================
 
         const string username = "admin";
@@ -65,7 +87,7 @@ public static class DatabaseSeeder
         }
 
         // ==============================
-        // 3. Assign Admin Role
+        // 4. Assign Admin Role
         // ==============================
 
         var userRoleExists = await context.UserRoles

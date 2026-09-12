@@ -193,9 +193,32 @@ public class AuthService : IAuthService
     // =========================================================
 
     public async Task SetInitialPasswordAsync(
-        int userId,
-        SetInitialPasswordRequestDto dto)
+      int userId,
+      SetInitialPasswordRequestDto dto)
     {
+        if (dto is null)
+        {
+            throw new ArgumentNullException(nameof(dto));
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+        {
+            throw new ArgumentException(
+                "New password is required.");
+        }
+
+        if (dto.NewPassword != dto.ConfirmNewPassword)
+        {
+            throw new ArgumentException(
+                "Passwords do not match.");
+        }
+
+        if (dto.NewPassword.Length < 8)
+        {
+            throw new ArgumentException(
+                "Password must be at least 8 characters long.");
+        }
+
         var user =
             await _authRepository
                 .GetUserByIdAsync(userId);
@@ -206,27 +229,32 @@ public class AuthService : IAuthService
                 "User not found.");
         }
 
+        // OTP verification must be completed first.
         if (!user.IsPhoneVerified)
         {
             throw new UnauthorizedAccessException(
                 "Phone number has not been verified.");
         }
 
+        // This endpoint is only for first-time password setup.
         if (!user.MustChangePassword)
         {
             throw new InvalidOperationException(
                 "Initial password has already been set.");
         }
 
+        // Create the permanent password.
         user.PasswordHash =
             _passwordHasher.HashPassword(
                 user,
                 dto.NewPassword);
 
+        // Initial password setup is now completed.
         user.MustChangePassword = false;
 
         await _authRepository.UpdateUserAsync(user);
     }
+    
     // =========================================================
     // REFRESH TOKEN
     // =========================================================
