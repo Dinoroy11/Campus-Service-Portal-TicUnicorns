@@ -12,7 +12,13 @@ public interface IFeePaymentRepository
 
     Task<FeePayment> CreateAsync(FeePayment feePayment);
 
+    Task UpdateAsync(FeePayment feePayment);
+
     Task<bool> ExistsAsync(int feePaymentId);
 
     Task<bool> ExistsForStudentFeeAsync(int studentFeeId);
+
+    Task<bool> HasPaidPaymentForStudentFeeAsync(int studentFeeId);
+
+    Task<bool> HasCarryForwardFromPaymentAsync(int sourcePaymentId);
 }

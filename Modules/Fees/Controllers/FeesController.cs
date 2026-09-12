@@ -1,11 +1,14 @@
-﻿using CampusServicePortal.Modules.Fees.DTOs;
+﻿using System.Security.Claims;
+using CampusServicePortal.Modules.Fees.DTOs;
 using CampusServicePortal.Modules.Fees.Interfaces.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal.Modules.Fees.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class FeesController : ControllerBase
 {
     private readonly IFeesService _feesService;
@@ -20,285 +23,410 @@ public class FeesController : ControllerBase
     // =========================================================
 
     [HttpGet("types")]
+    [Authorize(Roles = "Admin,Student")]
     public async Task<IActionResult> GetAllFeeTypes()
-    {
-        var result = await _feesService.GetAllFeeTypesAsync();
+        => Ok(await _feesService.GetAllFeeTypesAsync());
 
-        return Ok(result);
-    }
-
-    [HttpGet("types/{feeTypeId}")]
+    [HttpGet("types/{feeTypeId:int}")]
+    [Authorize(Roles = "Admin,Student")]
     public async Task<IActionResult> GetFeeTypeById(int feeTypeId)
     {
-        var result =
-            await _feesService.GetFeeTypeByIdAsync(feeTypeId);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        var result = await _feesService.GetFeeTypeByIdAsync(feeTypeId);
+        return result == null
+            ? NotFound(new { message = "Fee type not found." })
+            : Ok(result);
     }
 
     [HttpPost("types")]
-    public async Task<IActionResult> CreateFeeType(
-        [FromBody] CreateFeeTypeDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateFeeType([FromBody] CreateFeeTypeDto dto)
     {
-        var result =
-            await _feesService.CreateFeeTypeAsync(dto);
-
-        return CreatedAtAction(
-            nameof(GetFeeTypeById),
-            new { feeTypeId = result.FeeTypeId },
-            result);
+        try
+        {
+            return Ok(await _feesService.CreateFeeTypeAsync(dto));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
-    [HttpPut("types/{feeTypeId}")]
+    [HttpPut("types/{feeTypeId:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateFeeType(
         int feeTypeId,
         [FromBody] CreateFeeTypeDto dto)
     {
         try
         {
-            await _feesService.UpdateFeeTypeAsync(
-                feeTypeId,
-                dto);
-
+            await _feesService.UpdateFeeTypeAsync(feeTypeId, dto);
             return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-
-    // =========================================================
-    // Student Fees
-    // =========================================================
-
-    [HttpGet("student-fees")]
-    public async Task<IActionResult> GetAllStudentFees()
-    {
-        var result =
-            await _feesService.GetAllStudentFeesAsync();
-
-        return Ok(result);
-    }
-
-    [HttpGet("student-fees/{studentFeeId}")]
-    public async Task<IActionResult> GetStudentFeeById(
-        int studentFeeId)
-    {
-        var result =
-            await _feesService.GetStudentFeeByIdAsync(
-                studentFeeId);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpGet("students/{studentId}/fees")]
-    public async Task<IActionResult> GetStudentFeesByStudentId(
-        int studentId)
-    {
-        var result =
-            await _feesService
-                .GetStudentFeesByStudentIdAsync(studentId);
-
-        return Ok(result);
-    }
-
-    [HttpPost("student-fees")]
-    public async Task<IActionResult> CreateStudentFee(
-        [FromBody] CreateStudentFeeDto dto)
+    [HttpPatch("types/{feeTypeId:int}/active")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SetFeeTypeActive(
+        int feeTypeId,
+        [FromBody] SetFeeTypeActiveDto dto)
     {
         try
         {
-            var result =
-                await _feesService.CreateStudentFeeAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetStudentFeeById),
-                new { studentFeeId = result.StudentFeeId },
-                result);
+            await _feesService.SetFeeTypeActiveAsync(feeTypeId, dto.IsActive);
+            return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
         }
     }
 
-    [HttpPut("student-fees/{studentFeeId}")]
+    // =========================================================
+    // Admin Student Fee Management
+    // =========================================================
+
+    [HttpGet("student-fees")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllStudentFees()
+        => Ok(await _feesService.GetAllStudentFeesAsync());
+
+    [HttpGet("student-fees/{studentFeeId:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetStudentFeeById(int studentFeeId)
+    {
+        var result = await _feesService.GetStudentFeeByIdAsync(studentFeeId);
+        return result == null
+            ? NotFound(new { message = "Student fee not found." })
+            : Ok(result);
+    }
+
+    [HttpGet("students/{studentId:int}/fees")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetStudentFeesByStudentId(int studentId)
+    {
+        try
+        {
+            return Ok(await _feesService.GetStudentFeesByStudentIdAsync(studentId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("student-fees")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateStudentFee([FromBody] CreateStudentFeeDto dto)
+    {
+        try
+        {
+            return Ok(await _feesService.CreateStudentFeeAsync(dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("student-fees/{studentFeeId:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateStudentFee(
         int studentFeeId,
         [FromBody] CreateStudentFeeDto dto)
     {
         try
         {
-            await _feesService.UpdateStudentFeeAsync(
-                studentFeeId,
-                dto);
-
+            await _feesService.UpdateStudentFeeAsync(studentFeeId, dto);
             return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
+    // =========================================================
+    // Student Self-Service
+    // =========================================================
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyFees()
+    {
+        try
+        {
+            return Ok(await _feesService.GetMyFeesAsync(GetCurrentUserId()));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/{studentFeeId:int}")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyFeeById(int studentFeeId)
+    {
+        try
+        {
+            var result = await _feesService.GetMyFeeByIdAsync(GetCurrentUserId(), studentFeeId);
+            return result == null
+                ? NotFound(new { message = "Fee not found." })
+                : Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/payments")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyPayments()
+    {
+        try
+        {
+            return Ok(await _feesService.GetMyPaymentsAsync(GetCurrentUserId()));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("my/{studentFeeId:int}/pay")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> PayMyFee(
+        int studentFeeId,
+        [FromBody] SimulateFeePaymentDto dto)
+    {
+        try
+        {
+            return Ok(await _feesService.PayMyFeeAsync(
+                GetCurrentUserId(),
+                studentFeeId,
+                dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     // =========================================================
-    // Fee Payments
+    // Admin Payment View + Carry Forward
     // =========================================================
 
     [HttpGet("payments")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllPayments()
-    {
-        var result =
-            await _feesService.GetAllPaymentsAsync();
+        => Ok(await _feesService.GetAllPaymentsAsync());
 
-        return Ok(result);
+    [HttpGet("payments/{feePaymentId:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPaymentById(int feePaymentId)
+    {
+        var result = await _feesService.GetPaymentByIdAsync(feePaymentId);
+        return result == null
+            ? NotFound(new { message = "Payment not found." })
+            : Ok(result);
     }
 
-    [HttpGet("payments/{feePaymentId}")]
-    public async Task<IActionResult> GetPaymentById(
-        int feePaymentId)
-    {
-        var result =
-            await _feesService.GetPaymentByIdAsync(
-                feePaymentId);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpGet("student-fees/{studentFeeId}/payments")]
-    public async Task<IActionResult> GetPaymentsByStudentFeeId(
-        int studentFeeId)
-    {
-        var result =
-            await _feesService
-                .GetPaymentsByStudentFeeIdAsync(studentFeeId);
-
-        return Ok(result);
-    }
-
-    [HttpPost("payments")]
-    public async Task<IActionResult> CreatePayment(
-        [FromBody] FeePaymentDto dto)
+    [HttpGet("student-fees/{studentFeeId:int}/payments")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPaymentsByStudentFeeId(int studentFeeId)
     {
         try
         {
-            var result =
-                await _feesService.CreatePaymentAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetPaymentById),
-                new { feePaymentId = result.FeePaymentId },
-                result);
+            return Ok(await _feesService.GetPaymentsByStudentFeeIdAsync(studentFeeId));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
+            return NotFound(new { message = ex.Message });
         }
     }
 
+    [HttpPost("carry-forward")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CarryForward([FromBody] CarryForwardFeeDto dto)
+    {
+        try
+        {
+            return Ok(await _feesService.CarryForwardExamFeeAsync(
+                GetCurrentUserId(),
+                dto));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     // =========================================================
-    // Refund Requests
+    // Refunds
     // =========================================================
 
     [HttpGet("refunds")]
-    public async Task<IActionResult> GetAllRefundRequests()
-    {
-        var result =
-            await _feesService.GetAllRefundRequestsAsync();
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllRefunds()
+        => Ok(await _feesService.GetAllRefundRequestsAsync());
 
-        return Ok(result);
+    [HttpGet("refunds/{refundRequestId:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetRefundById(int refundRequestId)
+    {
+        var result = await _feesService.GetRefundRequestByIdAsync(refundRequestId);
+        return result == null
+            ? NotFound(new { message = "Refund request not found." })
+            : Ok(result);
     }
 
-    [HttpGet("refunds/{refundRequestId}")]
-    public async Task<IActionResult> GetRefundRequestById(
-        int refundRequestId)
-    {
-        var result =
-            await _feesService.GetRefundRequestByIdAsync(
-                refundRequestId);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpGet("payments/{paymentId}/refund")]
-    public async Task<IActionResult> GetRefundRequestByPaymentId(
-        int paymentId)
-    {
-        var result =
-            await _feesService
-                .GetRefundRequestByPaymentIdAsync(paymentId);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
-    }
-
-    [HttpPost("refunds")]
-    public async Task<IActionResult> CreateRefundRequest(
-        [FromBody] RefundRequestDto dto)
+    [HttpGet("my/refunds")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyRefunds()
     {
         try
         {
-            var result =
-                await _feesService
-                    .CreateRefundRequestAsync(dto);
+            return Ok(await _feesService.GetMyRefundRequestsAsync(GetCurrentUserId()));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+    }
 
-            return CreatedAtAction(
-                nameof(GetRefundRequestById),
-                new { refundRequestId = result.RefundRequestId },
-                result);
+    [HttpPost("my/payments/{paymentId:int}/refund")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> RequestRefund(
+        int paymentId,
+        [FromBody] CreateRefundRequestDto dto)
+    {
+        try
+        {
+            return Ok(await _feesService.CreateMyRefundRequestAsync(
+                GetCurrentUserId(),
+                paymentId,
+                dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    [HttpPut("refunds/{refundRequestId}")]
-    public async Task<IActionResult> UpdateRefundRequest(
+    [HttpPut("refunds/{refundRequestId:int}/decision")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ReviewRefund(
         int refundRequestId,
-        [FromBody] RefundRequestDto dto)
+        [FromBody] ReviewRefundRequestDto dto)
     {
         try
         {
-            await _feesService.UpdateRefundRequestAsync(
+            return Ok(await _feesService.ReviewRefundRequestAsync(
+                GetCurrentUserId(),
                 refundRequestId,
-                dto);
-
-            return NoContent();
+                dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(ex.Message);
+            return NotFound(new { message = ex.Message });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("refunds/{refundRequestId:int}/process")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ProcessRefund(int refundRequestId)
+    {
+        try
+        {
+            return Ok(await _feesService.ProcessRefundAsync(
+                GetCurrentUserId(),
+                refundRequestId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(value, out var userId))
+            throw new UnauthorizedAccessException("Invalid user identity.");
+
+        return userId;
     }
 }
