@@ -3,6 +3,4 @@
 public class CreateSportsRegistrationDto
 {
     public int SportsEventId { get; set; }
-
-    public int StudentId { get; set; }
 }

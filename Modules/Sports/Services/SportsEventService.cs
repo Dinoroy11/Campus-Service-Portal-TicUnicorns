@@ -9,8 +9,7 @@ public class SportsEventService : ISportsEventService
 {
     private readonly ISportsEventRepository _sportsEventRepository;
 
-    public SportsEventService(
-        ISportsEventRepository sportsEventRepository)
+    public SportsEventService(ISportsEventRepository sportsEventRepository)
     {
         _sportsEventRepository = sportsEventRepository;
     }
@@ -18,8 +17,25 @@ public class SportsEventService : ISportsEventService
     public async Task<IEnumerable<SportsEventDto>> GetAllAsync()
     {
         var events = await _sportsEventRepository.GetAllAsync();
+        return events
+            .OrderByDescending(x => x.EventDate)
+            .ThenBy(x => x.StartTime)
+            .Select(MapToDto);
+    }
 
-        return events.Select(MapToDto);
+    public async Task<IEnumerable<SportsEventDto>> GetAvailableAsync()
+    {
+        var now = DateTime.UtcNow;
+        var events = await _sportsEventRepository.GetAllAsync();
+
+        return events
+            .Where(x => x.IsActive)
+            .Where(x =>
+                x.EventDate.Date > now.Date ||
+                (x.EventDate.Date == now.Date && x.EndTime > now.TimeOfDay))
+            .OrderBy(x => x.EventDate)
+            .ThenBy(x => x.StartTime)
+            .Select(MapToDto);
     }
 
     public async Task<SportsEventDto?> GetByIdAsync(int sportsEventId)
@@ -27,40 +43,26 @@ public class SportsEventService : ISportsEventService
         if (sportsEventId <= 0)
             throw new ArgumentException("Invalid sports event ID.");
 
-        var sportsEvent =
-            await _sportsEventRepository.GetByIdAsync(sportsEventId);
-
-        return sportsEvent == null
-            ? null
-            : MapToDto(sportsEvent);
+        var sportsEvent = await _sportsEventRepository.GetByIdAsync(sportsEventId);
+        return sportsEvent == null ? null : MapToDto(sportsEvent);
     }
 
-    public async Task<SportsEventDto> CreateAsync(
-        CreateSportsEventDto dto)
+    public async Task<SportsEventDto> CreateAsync(CreateSportsEventDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.EventName))
-            throw new ArgumentException("Event name is required.");
-
-        if (dto.EventDate == default)
-            throw new ArgumentException("Event date is required.");
-
-        if (dto.StartTime >= dto.EndTime)
-            throw new ArgumentException(
-                "Start time must be earlier than end time.");
+        Validate(dto.EventName, dto.EventDate, dto.StartTime, dto.EndTime);
 
         var sportsEvent = new SportsEvent
         {
             EventName = dto.EventName.Trim(),
-            Description = dto.Description,
-            EventDate = dto.EventDate,
+            Description = dto.Description?.Trim(),
+            EventDate = dto.EventDate.Date,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
-            Location = dto.Location,
+            Location = dto.Location?.Trim(),
             IsActive = true
         };
 
         await _sportsEventRepository.AddAsync(sportsEvent);
-
         return MapToDto(sportsEvent);
     }
 
@@ -71,37 +73,41 @@ public class SportsEventService : ISportsEventService
         if (sportsEventId <= 0)
             throw new ArgumentException("Invalid sports event ID.");
 
-        if (string.IsNullOrWhiteSpace(dto.EventName))
-            throw new ArgumentException("Event name is required.");
+        Validate(dto.EventName, dto.EventDate, dto.StartTime, dto.EndTime);
 
-        if (dto.EventDate == default)
-            throw new ArgumentException("Event date is required.");
-
-        if (dto.StartTime >= dto.EndTime)
-            throw new ArgumentException(
-                "Start time must be earlier than end time.");
-
-        var sportsEvent =
-            await _sportsEventRepository.GetByIdAsync(sportsEventId);
-
+        var sportsEvent = await _sportsEventRepository.GetByIdAsync(sportsEventId);
         if (sportsEvent == null)
             return null;
 
         sportsEvent.EventName = dto.EventName.Trim();
-        sportsEvent.Description = dto.Description;
-        sportsEvent.EventDate = dto.EventDate;
+        sportsEvent.Description = dto.Description?.Trim();
+        sportsEvent.EventDate = dto.EventDate.Date;
         sportsEvent.StartTime = dto.StartTime;
         sportsEvent.EndTime = dto.EndTime;
-        sportsEvent.Location = dto.Location;
+        sportsEvent.Location = dto.Location?.Trim();
         sportsEvent.IsActive = dto.IsActive;
 
         await _sportsEventRepository.UpdateAsync(sportsEvent);
-
         return MapToDto(sportsEvent);
     }
 
-    private static SportsEventDto MapToDto(
-        SportsEvent sportsEvent)
+    private static void Validate(
+        string eventName,
+        DateTime eventDate,
+        TimeSpan startTime,
+        TimeSpan endTime)
+    {
+        if (string.IsNullOrWhiteSpace(eventName))
+            throw new ArgumentException("Event name is required.");
+
+        if (eventDate == default)
+            throw new ArgumentException("Event date is required.");
+
+        if (startTime >= endTime)
+            throw new ArgumentException("Start time must be earlier than end time.");
+    }
+
+    private static SportsEventDto MapToDto(SportsEvent sportsEvent)
     {
         return new SportsEventDto
         {

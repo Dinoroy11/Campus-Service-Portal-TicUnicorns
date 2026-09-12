@@ -23,52 +23,60 @@ public class SportsRegistrationRepository : ISportsRegistrationRepository
                 x.SportsRegistrationId == sportsRegistrationId);
     }
 
+    public async Task<SportsRegistration?> GetByEventAndStudentAsync(
+        int sportsEventId,
+        int studentId)
+    {
+        return await _context.SportsRegistrations
+            .FirstOrDefaultAsync(x =>
+                x.SportsEventId == sportsEventId &&
+                x.StudentId == studentId);
+    }
+
     public async Task<IEnumerable<SportsRegistration>> GetAllAsync()
     {
         return await _context.SportsRegistrations
             .AsNoTracking()
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<SportsRegistration>>
-        GetBySportsEventIdAsync(int sportsEventId)
+    public async Task<IEnumerable<SportsRegistration>> GetBySportsEventIdAsync(
+        int sportsEventId)
     {
         return await _context.SportsRegistrations
             .AsNoTracking()
             .Where(x => x.SportsEventId == sportsEventId)
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<SportsRegistration>>
-        GetByStudentIdAsync(int studentId)
+    public async Task<IEnumerable<SportsRegistration>> GetByStudentIdAsync(
+        int studentId)
     {
         return await _context.SportsRegistrations
             .AsNoTracking()
             .Where(x => x.StudentId == studentId)
+            .OrderByDescending(x => x.RegisteredAt)
             .ToListAsync();
     }
 
     public async Task AddAsync(SportsRegistration registration)
     {
-        await _context.SportsRegistrations
-            .AddAsync(registration);
-
+        await _context.SportsRegistrations.AddAsync(registration);
         await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(SportsRegistration registration)
     {
-        _context.SportsRegistrations
-            .Update(registration);
-
+        _context.SportsRegistrations.Update(registration);
         await _context.SaveChangesAsync();
     }
 
     public async Task<bool> ExistsAsync(int sportsRegistrationId)
     {
         return await _context.SportsRegistrations
-            .AnyAsync(x =>
-                x.SportsRegistrationId == sportsRegistrationId);
+            .AnyAsync(x => x.SportsRegistrationId == sportsRegistrationId);
     }
 
     public async Task<bool> ExistsByEventAndStudentAsync(
@@ -99,7 +107,6 @@ public class SportsRegistrationRepository : ISportsRegistrationRepository
                 student => student.MasterStudentId,
                 master => master.MasterStudentId,
                 (student, master) => master)
-            .CountAsync(master =>
-                master.DepartmentId == departmentId);
+            .CountAsync(master => master.DepartmentId == departmentId);
     }
 }

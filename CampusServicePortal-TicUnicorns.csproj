@@ -36,9 +36,7 @@
 		<Folder Include="Modules\Certificates\" />
 		<Folder Include="Modules\DashBoards\" />
 		<Folder Include="Modules\Laundry\" />
-		<Folder Include="Modules\Leave\" />
 		<Folder Include="Modules\AuditLogs\" />
-		<Folder Include="Modules\Sports\" />
 		<Folder Include="Modules\SystemSettings\" />
 		<Folder Include="Modules\Notifications\" />
 	</ItemGroup>

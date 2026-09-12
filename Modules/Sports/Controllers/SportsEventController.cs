@@ -12,59 +12,88 @@ public class SportsEventController : ControllerBase
 {
     private readonly ISportsEventService _sportsEventService;
 
-    public SportsEventController(
-        ISportsEventService sportsEventService)
+    public SportsEventController(ISportsEventService sportsEventService)
     {
         _sportsEventService = sportsEventService;
     }
 
+    // Admin sees active + inactive + past events.
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SportsEventDto>>> GetAll()
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll()
     {
-        var events = await _sportsEventService.GetAllAsync();
+        return Ok(await _sportsEventService.GetAllAsync());
+    }
 
-        return Ok(events);
+    // Students see only active events that have not ended.
+    [HttpGet("available")]
+    [Authorize(Roles = "Admin,Student")]
+    public async Task<IActionResult> GetAvailable()
+    {
+        return Ok(await _sportsEventService.GetAvailableAsync());
     }
 
     [HttpGet("{sportsEventId:int}")]
-    public async Task<ActionResult<SportsEventDto>> GetById(
-        int sportsEventId)
+    [Authorize(Roles = "Admin,Student")]
+    public async Task<IActionResult> GetById(int sportsEventId)
     {
-        var sportsEvent =
-            await _sportsEventService.GetByIdAsync(sportsEventId);
-
-        if (sportsEvent == null)
-            return NotFound();
-
-        return Ok(sportsEvent);
+        try
+        {
+            var sportsEvent = await _sportsEventService.GetByIdAsync(sportsEventId);
+            return sportsEvent == null
+                ? NotFound(new { message = "Sports event not found." })
+                : Ok(sportsEvent);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost]
-    public async Task<ActionResult<SportsEventDto>> Create(
-        CreateSportsEventDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateSportsEventDto dto)
     {
-        var sportsEvent =
-            await _sportsEventService.CreateAsync(dto);
-
-        return CreatedAtAction(
-            nameof(GetById),
-            new { sportsEventId = sportsEvent.SportsEventId },
-            sportsEvent);
+        try
+        {
+            var sportsEvent = await _sportsEventService.CreateAsync(dto);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { sportsEventId = sportsEvent.SportsEventId },
+                sportsEvent);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{sportsEventId:int}")]
-    public async Task<ActionResult<SportsEventDto>> Update(
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(
         int sportsEventId,
-        UpdateSportsEventDto dto)
+        [FromBody] UpdateSportsEventDto dto)
     {
-        var sportsEvent =
-            await _sportsEventService.UpdateAsync(
-                sportsEventId,
-                dto);
+        try
+        {
+            var sportsEvent =
+                await _sportsEventService.UpdateAsync(sportsEventId, dto);
 
-        if (sportsEvent == null)
-            return NotFound();
-
-        return Ok(sportsEvent);
+            return sportsEvent == null
+                ? NotFound(new { message = "Sports event not found." })
+                : Ok(sportsEvent);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

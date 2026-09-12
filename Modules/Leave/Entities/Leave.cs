@@ -1,21 +1,33 @@
-﻿namespace CampusServicePortal.Modules.Leave.Entities
+﻿using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
+
+namespace CampusServicePortal.Modules.Leave.Entities;
+
+public class LeaveRequest
 {
-    public class Leave
-    {
-        public int LeaveId { get; set; }
+    public int LeaveRequestId { get; set; }
 
-        public int UserId { get; set; }
+    public int LeaveTypeId { get; set; }
 
-        public string LeaveType { get; set; } = string.Empty;
+    public int StudentId { get; set; }
 
-        public DateTime StartDate { get; set; }
+    // Department is derived from StudentMasterList at request creation time.
+    // It is stored on the request so department-scoped staff queries remain stable.
+    public int DepartmentId { get; set; }
 
-        public DateTime EndDate { get; set; }
+    public DateTime StartDate { get; set; }
 
-        public string Reason { get; set; } = string.Empty;
+    public DateTime EndDate { get; set; }
 
-        public string Status { get; set; } = "Pending";
+    public string Reason { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
+    public string Status { get; set; } = "Pending";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public LeaveType LeaveType { get; set; } = null!;
+
+    public Student Student { get; set; } = null!;
+
+    public ICollection<LeaveApproval> Approvals { get; set; }
+        = new List<LeaveApproval>();
 }

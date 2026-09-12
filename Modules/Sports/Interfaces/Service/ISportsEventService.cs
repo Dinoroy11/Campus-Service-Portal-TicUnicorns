@@ -6,6 +6,8 @@ public interface ISportsEventService
 {
     Task<IEnumerable<SportsEventDto>> GetAllAsync();
 
+    Task<IEnumerable<SportsEventDto>> GetAvailableAsync();
+
     Task<SportsEventDto?> GetByIdAsync(int sportsEventId);
 
     Task<SportsEventDto> CreateAsync(CreateSportsEventDto dto);

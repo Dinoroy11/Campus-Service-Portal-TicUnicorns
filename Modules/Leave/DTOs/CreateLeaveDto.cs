@@ -1,15 +1,12 @@
-﻿namespace CampusServicePortal.Modules.Leave.DTOs
+﻿namespace CampusServicePortal.Modules.Leave.DTOs;
+
+public class CreateLeaveDto
 {
-    public class CreateLeaveDto
-    {
-        public int UserId { get; set; }
+    public int LeaveTypeId { get; set; }
 
-        public string LeaveType { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
 
-        public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
 
-        public DateTime EndDate { get; set; }
-
-        public string Reason { get; set; } = string.Empty;
-    }
+    public string Reason { get; set; } = string.Empty;
 }

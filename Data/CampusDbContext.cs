@@ -170,8 +170,16 @@ public class CampusDbContext : DbContext
     // LEAVE
     // =========================================================
 
-    public DbSet<Leave>
-        Leaves
+    public DbSet<LeaveType>
+        LeaveTypes
+    { get; set; }
+
+    public DbSet<LeaveRequest>
+        LeaveRequests
+    { get; set; }
+
+    public DbSet<LeaveApproval>
+        LeaveApprovals
     { get; set; }
 
 

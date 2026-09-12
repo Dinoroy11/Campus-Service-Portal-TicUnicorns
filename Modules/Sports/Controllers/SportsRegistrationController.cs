@@ -1,5 +1,5 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.DTOs;
-using CampusServicePortal_TicUnicorns.Modules.Sports.Enums;
+﻿using System.Security.Claims;
+using CampusServicePortal_TicUnicorns.Modules.Sports.DTOs;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,82 +19,154 @@ public class SportsRegistrationController : ControllerBase
         _registrationService = registrationService;
     }
 
+    // ADMIN
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SportsRegistrationDto>>>
-        GetAll()
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll()
     {
-        var registrations =
-            await _registrationService.GetAllAsync();
-
-        return Ok(registrations);
+        return Ok(await _registrationService.GetAllAsync());
     }
 
     [HttpGet("{sportsRegistrationId:int}")]
-    public async Task<ActionResult<SportsRegistrationDto>> GetById(
-        int sportsRegistrationId)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetById(int sportsRegistrationId)
     {
-        var registration =
-            await _registrationService
-                .GetByIdAsync(sportsRegistrationId);
+        try
+        {
+            var registration =
+                await _registrationService.GetByIdAsync(sportsRegistrationId);
 
-        if (registration == null)
-            return NotFound();
-
-        return Ok(registration);
+            return registration == null
+                ? NotFound(new { message = "Sports registration not found." })
+                : Ok(registration);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet("event/{sportsEventId:int}")]
-    public async Task<ActionResult<IEnumerable<SportsRegistrationDto>>>
-        GetBySportsEventId(int sportsEventId)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBySportsEventId(int sportsEventId)
     {
-        var registrations =
-            await _registrationService
-                .GetBySportsEventIdAsync(sportsEventId);
-
-        return Ok(registrations);
-    }
-
-    [HttpGet("student/{studentId:int}")]
-    public async Task<ActionResult<IEnumerable<SportsRegistrationDto>>>
-        GetByStudentId(int studentId)
-    {
-        var registrations =
-            await _registrationService
-                .GetByStudentIdAsync(studentId);
-
-        return Ok(registrations);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<SportsRegistrationDto>> Create(
-        CreateSportsRegistrationDto dto)
-    {
-        var registration =
-            await _registrationService.CreateAsync(dto);
-
-        return CreatedAtAction(
-            nameof(GetById),
-            new
-            {
-                sportsRegistrationId =
-                    registration.SportsRegistrationId
-            },
-            registration);
+        try
+        {
+            return Ok(await _registrationService
+                .GetBySportsEventIdAsync(sportsEventId));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPatch("{sportsRegistrationId:int}/status")]
-    public async Task<ActionResult<SportsRegistrationDto>> UpdateStatus(
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateStatus(
         int sportsRegistrationId,
-        SportsRegistrationStatus status)
+        [FromBody] UpdateSportsRegistrationStatusDto dto)
     {
-        var registration =
-            await _registrationService.UpdateStatusAsync(
+        try
+        {
+            var registration = await _registrationService.UpdateStatusAsync(
                 sportsRegistrationId,
-                status);
+                dto.Status);
 
-        if (registration == null)
-            return NotFound();
+            return registration == null
+                ? NotFound(new { message = "Sports registration not found." })
+                : Ok(registration);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
-        return Ok(registration);
+    // STUDENT
+    [HttpGet("my")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMy()
+    {
+        try
+        {
+            return Ok(await _registrationService.GetMyAsync(GetCurrentUserId()));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> CreateMy(
+        [FromBody] CreateSportsRegistrationDto dto)
+    {
+        try
+        {
+            var registration = await _registrationService.CreateMyAsync(
+                GetCurrentUserId(),
+                dto);
+
+            return Ok(registration);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("my/{sportsRegistrationId:int}/cancel")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> CancelMy(int sportsRegistrationId)
+    {
+        try
+        {
+            var registration = await _registrationService.CancelMyAsync(
+                GetCurrentUserId(),
+                sportsRegistrationId);
+
+            return registration == null
+                ? NotFound(new { message = "Sports registration not found." })
+                : Ok(registration);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdText, out var userId))
+            throw new UnauthorizedAccessException("Invalid user identity.");
+
+        return userId;
     }
 }

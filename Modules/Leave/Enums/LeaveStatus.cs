@@ -1,10 +1,8 @@
-﻿namespace CampusServicePortal.Modules.Leave.Enums
+﻿namespace CampusServicePortal.Modules.Leave.Enums;
+
+public enum LeaveStatus
 {
-    public enum LeaveStatus
-    {
-        Pending,
-        Approved,
-        Rejected,
-        Cancelled
-    }
+    Pending,
+    Approved,
+    Rejected
 }

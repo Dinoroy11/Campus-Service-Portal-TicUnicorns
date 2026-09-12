@@ -1,17 +1,40 @@
 ﻿using CampusServicePortal.Modules.Leave.DTOs;
 
-namespace CampusServicePortal.Modules.Leave.Interfaces.Service
+namespace CampusServicePortal.Modules.Leave.Interfaces.Service;
+
+public interface ILeaveService
 {
-    public interface ILeaveService
-    {
-        Task<IEnumerable<LeaveDto>> GetAllLeavesAsync();
+    Task<IReadOnlyCollection<LeaveTypeDto>> GetLeaveTypesAsync(
+        bool includeInactive = false);
 
-        Task<LeaveDto?> GetLeaveByIdAsync(int leaveId);
+    Task<LeaveTypeDto> CreateLeaveTypeAsync(CreateLeaveTypeDto dto);
 
-        Task<LeaveDto> CreateLeaveAsync(CreateLeaveDto leaveDto);
+    Task<LeaveTypeDto?> SetLeaveTypeStatusAsync(
+        int leaveTypeId,
+        bool isActive);
 
-        Task<LeaveDto?> UpdateLeaveAsync(int leaveId, UpdateLeaveDto leaveDto);
+    Task<LeaveDto> CreateLeaveAsync(
+        int currentUserId,
+        CreateLeaveDto dto);
 
-        Task<bool> DeleteLeaveAsync(int leaveId);
-    }
+    Task<IReadOnlyCollection<LeaveDto>> GetMyLeavesAsync(int currentUserId);
+
+    Task<LeaveDto?> GetMyLeaveByIdAsync(
+        int currentUserId,
+        int leaveRequestId);
+
+    Task<IReadOnlyCollection<LeaveDto>> GetStaffDashboardAsync(
+        int currentUserId,
+        bool isAdmin);
+
+    Task<LeaveDto?> GetStaffLeaveByIdAsync(
+        int currentUserId,
+        bool isAdmin,
+        int leaveRequestId);
+
+    Task<LeaveDto?> DecideLeaveAsync(
+        int currentUserId,
+        bool isAdmin,
+        int leaveRequestId,
+        UpdateLeaveDto dto);
 }

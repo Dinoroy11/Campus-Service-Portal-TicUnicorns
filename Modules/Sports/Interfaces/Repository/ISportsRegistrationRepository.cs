@@ -4,8 +4,11 @@ namespace CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Repository;
 
 public interface ISportsRegistrationRepository
 {
-    Task<SportsRegistration?> GetByIdAsync(
-        int sportsRegistrationId);
+    Task<SportsRegistration?> GetByIdAsync(int sportsRegistrationId);
+
+    Task<SportsRegistration?> GetByEventAndStudentAsync(
+        int sportsEventId,
+        int studentId);
 
     Task<IEnumerable<SportsRegistration>> GetAllAsync();
 

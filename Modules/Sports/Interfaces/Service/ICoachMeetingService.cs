@@ -8,12 +8,19 @@ public interface ICoachMeetingService
 
     Task<CoachMeetingDto?> GetByIdAsync(int coachMeetingId);
 
-    Task<IEnumerable<CoachMeetingDto>>
-        GetBySportsEventIdAsync(int sportsEventId);
+    Task<IEnumerable<CoachMeetingDto>> GetBySportsEventIdAsync(
+        int sportsEventId);
 
-    Task<CoachMeetingDto> CreateAsync(CoachMeetingDto dto);
+    Task<IEnumerable<CoachMeetingDto>> GetForStudentEventAsync(
+        int userId,
+        int sportsEventId);
+
+    Task<CoachMeetingDto> CreateAsync(
+        int createdByUserId,
+        CreateCoachMeetingDto dto);
 
     Task<CoachMeetingDto?> UpdateAsync(
         int coachMeetingId,
-        CoachMeetingDto dto);
+        int updatedByUserId,
+        UpdateCoachMeetingDto dto);
 }

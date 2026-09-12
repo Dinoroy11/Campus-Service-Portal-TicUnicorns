@@ -1,15 +1,22 @@
-﻿namespace CampusServicePortal.Modules.Leave.DTOs
+﻿namespace CampusServicePortal.Modules.Leave.DTOs;
+
+// Used by Department Staff/Admin when reviewing a leave request.
+public class UpdateLeaveDto
 {
-    public class UpdateLeaveDto
-    {
-        public string LeaveType { get; set; } = string.Empty;
+    // Allowed values: Approved, Rejected
+    public string Status { get; set; } = string.Empty;
 
-        public DateTime StartDate { get; set; }
+    public string? Remarks { get; set; }
+}
 
-        public DateTime EndDate { get; set; }
+public class CreateLeaveTypeDto
+{
+    public string Name { get; set; } = string.Empty;
 
-        public string Reason { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
 
-        public string Status { get; set; } = string.Empty;
-    }
+public class UpdateLeaveTypeStatusDto
+{
+    public bool IsActive { get; set; }
 }

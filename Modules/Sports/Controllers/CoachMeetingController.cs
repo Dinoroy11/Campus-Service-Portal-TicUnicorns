@@ -1,4 +1,5 @@
-﻿using CampusServicePortal_TicUnicorns.Modules.Sports.DTOs;
+﻿using System.Security.Claims;
+using CampusServicePortal_TicUnicorns.Modules.Sports.DTOs;
 using CampusServicePortal_TicUnicorns.Modules.Sports.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,77 +13,129 @@ public class CoachMeetingController : ControllerBase
 {
     private readonly ICoachMeetingService _coachMeetingService;
 
-    public CoachMeetingController(
-        ICoachMeetingService coachMeetingService)
+    public CoachMeetingController(ICoachMeetingService coachMeetingService)
     {
         _coachMeetingService = coachMeetingService;
     }
 
+    // ADMIN
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CoachMeetingDto>>>
-        GetAll()
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll()
     {
-        var meetings =
-            await _coachMeetingService.GetAllAsync();
-
-        return Ok(meetings);
+        return Ok(await _coachMeetingService.GetAllAsync());
     }
 
     [HttpGet("{coachMeetingId:int}")]
-    public async Task<ActionResult<CoachMeetingDto>> GetById(
-        int coachMeetingId)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetById(int coachMeetingId)
     {
-        var meeting =
-            await _coachMeetingService
-                .GetByIdAsync(coachMeetingId);
-
-        if (meeting == null)
-            return NotFound();
-
-        return Ok(meeting);
+        try
+        {
+            var meeting = await _coachMeetingService.GetByIdAsync(coachMeetingId);
+            return meeting == null
+                ? NotFound(new { message = "Coach meeting not found." })
+                : Ok(meeting);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet("event/{sportsEventId:int}")]
-    public async Task<ActionResult<IEnumerable<CoachMeetingDto>>>
-        GetBySportsEventId(int sportsEventId)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBySportsEventId(int sportsEventId)
     {
-        var meetings =
-            await _coachMeetingService
-                .GetBySportsEventIdAsync(sportsEventId);
-
-        return Ok(meetings);
+        try
+        {
+            return Ok(await _coachMeetingService
+                .GetBySportsEventIdAsync(sportsEventId));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost]
-    public async Task<ActionResult<CoachMeetingDto>> Create(
-        CoachMeetingDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateCoachMeetingDto dto)
     {
-        var meeting =
-            await _coachMeetingService.CreateAsync(dto);
+        try
+        {
+            var meeting = await _coachMeetingService.CreateAsync(
+                GetCurrentUserId(),
+                dto);
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new
-            {
-                coachMeetingId =
-                    meeting.CoachMeetingId
-            },
-            meeting);
+            return Ok(meeting);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{coachMeetingId:int}")]
-    public async Task<ActionResult<CoachMeetingDto>> Update(
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(
         int coachMeetingId,
-        CoachMeetingDto dto)
+        [FromBody] UpdateCoachMeetingDto dto)
     {
-        var meeting =
-            await _coachMeetingService.UpdateAsync(
+        try
+        {
+            var meeting = await _coachMeetingService.UpdateAsync(
                 coachMeetingId,
+                GetCurrentUserId(),
                 dto);
 
-        if (meeting == null)
-            return NotFound();
+            return meeting == null
+                ? NotFound(new { message = "Coach meeting not found." })
+                : Ok(meeting);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
-        return Ok(meeting);
+    // STUDENT: only students actively registered for the event can view meetings.
+    [HttpGet("my/event/{sportsEventId:int}")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyEventMeetings(int sportsEventId)
+    {
+        try
+        {
+            return Ok(await _coachMeetingService.GetForStudentEventAsync(
+                GetCurrentUserId(),
+                sportsEventId));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdText, out var userId))
+            throw new UnauthorizedAccessException("Invalid user identity.");
+
+        return userId;
     }
 }

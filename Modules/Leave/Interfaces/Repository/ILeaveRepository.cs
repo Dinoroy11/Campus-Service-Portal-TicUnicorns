@@ -1,17 +1,41 @@
-﻿using LeaveEntity = CampusServicePortal.Modules.Leave.Entities.Leave;
+﻿using CampusServicePortal.Modules.Identity.Entities;
+using CampusServicePortal.Modules.Leave.Entities;
+using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
 
-namespace CampusServicePortal.Modules.Leave.Interfaces.Repository
+namespace CampusServicePortal.Modules.Leave.Interfaces.Repository;
+
+public interface ILeaveRepository
 {
-    public interface ILeaveRepository
-    {
-        Task<IEnumerable<LeaveEntity>> GetAllLeavesAsync();
+    Task<IReadOnlyCollection<LeaveType>> GetLeaveTypesAsync(bool activeOnly);
 
-        Task<LeaveEntity?> GetLeaveByIdAsync(int leaveId);
+    Task<LeaveType?> GetLeaveTypeByIdAsync(int leaveTypeId);
 
-        Task<LeaveEntity> CreateLeaveAsync(LeaveEntity leave);
+    Task<bool> LeaveTypeNameExistsAsync(string name);
 
-        Task<LeaveEntity?> UpdateLeaveAsync(LeaveEntity leave);
+    Task AddLeaveTypeAsync(LeaveType leaveType);
 
-        Task<bool> DeleteLeaveAsync(int leaveId);
-    }
+    Task UpdateLeaveTypeAsync(LeaveType leaveType);
+
+    Task<Student?> GetStudentByUserIdAsync(int userId);
+
+    Task<StudentMasterList?> GetMasterStudentByIdAsync(int masterStudentId);
+
+    Task<IReadOnlyCollection<LeaveRequest>> GetRequestsByStudentIdAsync(int studentId);
+
+    Task<IReadOnlyCollection<LeaveRequest>> GetRequestsByDepartmentIdsAsync(
+        IReadOnlyCollection<int> departmentIds);
+
+    Task<IReadOnlyCollection<LeaveRequest>> GetAllRequestsAsync();
+
+    Task<LeaveRequest?> GetRequestByIdAsync(int leaveRequestId);
+
+    Task AddRequestAsync(LeaveRequest request);
+
+    Task UpdateRequestAsync(LeaveRequest request);
+
+    Task AddApprovalAsync(LeaveApproval approval);
+
+    Task<IReadOnlyCollection<int>> GetAssignedDepartmentIdsAsync(int userId);
+
+    Task AddAuditLogAsync(AuditLog auditLog);
 }

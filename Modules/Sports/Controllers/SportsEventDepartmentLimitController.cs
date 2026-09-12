@@ -10,8 +10,7 @@ namespace CampusServicePortal_TicUnicorns.Modules.Sports.Controllers;
 [Authorize]
 public class SportsEventDepartmentLimitController : ControllerBase
 {
-    private readonly ISportsEventDepartmentLimitService
-        _departmentLimitService;
+    private readonly ISportsEventDepartmentLimitService _departmentLimitService;
 
     public SportsEventDepartmentLimitController(
         ISportsEventDepartmentLimitService departmentLimitService)
@@ -20,50 +19,63 @@ public class SportsEventDepartmentLimitController : ControllerBase
     }
 
     [HttpGet("event/{sportsEventId:int}")]
-    public async Task<
-        ActionResult<IEnumerable<SportsEventDepartmentLimitDto>>>
-        GetBySportsEventId(int sportsEventId)
+    [Authorize(Roles = "Admin,Student")]
+    public async Task<IActionResult> GetBySportsEventId(int sportsEventId)
     {
-        var limits =
-            await _departmentLimitService
-                .GetBySportsEventIdAsync(sportsEventId);
-
-        return Ok(limits);
+        try
+        {
+            return Ok(await _departmentLimitService
+                .GetBySportsEventIdAsync(sportsEventId));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost]
-    public async Task<
-        ActionResult<SportsEventDepartmentLimitDto>>
-        Create(SportsEventDepartmentLimitDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create(
+        [FromBody] SportsEventDepartmentLimitDto dto)
     {
-        var departmentLimit =
-            await _departmentLimitService.CreateAsync(dto);
-
-        return CreatedAtAction(
-            nameof(GetBySportsEventId),
-            new
-            {
-                sportsEventId =
-                    departmentLimit.SportsEventId
-            },
-            departmentLimit);
+        try
+        {
+            var result = await _departmentLimitService.CreateAsync(dto);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{sportsEventDepartmentLimitId:int}")]
-    public async Task<
-        ActionResult<SportsEventDepartmentLimitDto>>
-        Update(
-            int sportsEventDepartmentLimitId,
-            SportsEventDepartmentLimitDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(
+        int sportsEventDepartmentLimitId,
+        [FromBody] SportsEventDepartmentLimitDto dto)
     {
-        var departmentLimit =
-            await _departmentLimitService.UpdateAsync(
+        try
+        {
+            var result = await _departmentLimitService.UpdateAsync(
                 sportsEventDepartmentLimitId,
                 dto);
 
-        if (departmentLimit == null)
-            return NotFound();
-
-        return Ok(departmentLimit);
+            return result == null
+                ? NotFound(new { message = "Department limit not found." })
+                : Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }
