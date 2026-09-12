@@ -4,14 +4,27 @@ namespace CampusServicePortal.Modules.Notifications.Interfaces.Service
 {
     public interface INotificationService
     {
-        Task<IEnumerable<NotificationDto>> GetByUserIdAsync(int userId);
+        Task<IEnumerable<NotificationDto>> GetMyNotificationsAsync(
+            int userId,
+            bool unreadOnly = false);
 
-        Task<NotificationDto?> GetByIdAsync(int notificationId);
+        Task<NotificationDto?> GetMyNotificationByIdAsync(
+            int notificationId,
+            int userId);
 
+        Task<int> GetUnreadCountAsync(int userId);
+
+        // Used internally by other modules to generate notifications.
         Task<NotificationDto> CreateAsync(NotificationCreateDto dto);
 
-        Task<bool> MarkAsReadAsync(int notificationId);
+        Task<bool> MarkAsReadAsync(
+            int notificationId,
+            int userId);
 
-        Task<bool> DeleteAsync(int notificationId);
+        Task<int> MarkAllAsReadAsync(int userId);
+
+        Task<bool> DeleteAsync(
+            int notificationId,
+            int userId);
     }
 }

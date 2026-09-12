@@ -14,34 +14,120 @@ namespace CampusServicePortal.Modules.Notifications.Services
             _notificationRepository = notificationRepository;
         }
 
-        public async Task<IEnumerable<NotificationDto>> GetByUserIdAsync(int userId)
+        public async Task<IEnumerable<NotificationDto>> GetMyNotificationsAsync(
+            int userId,
+            bool unreadOnly = false)
         {
-            var notifications =
-                await _notificationRepository.GetByUserIdAsync(userId);
+            ValidateUserId(userId);
 
-            return notifications.Select(notification => new NotificationDto
-            {
-                NotificationId = notification.NotificationId,
-                UserId = notification.UserId,
-                Title = notification.Title,
-                Message = notification.Message,
-                IsRead = notification.IsRead,
-                ReferenceType = notification.ReferenceType,
-                ReferenceId = notification.ReferenceId,
-                CreatedAt = notification.CreatedAt
-            });
+            var notifications = await _notificationRepository
+                .GetByUserIdAsync(userId, unreadOnly);
+
+            return notifications.Select(MapToDto).ToList();
         }
 
-        public async Task<NotificationDto?> GetByIdAsync(int notificationId)
+        public async Task<NotificationDto?> GetMyNotificationByIdAsync(
+            int notificationId,
+            int userId)
         {
-            var notification =
-                await _notificationRepository.GetByIdAsync(notificationId);
+            ValidateUserId(userId);
 
-            if (notification == null)
+            if (notificationId <= 0)
             {
                 return null;
             }
 
+            var notification = await _notificationRepository
+                .GetByIdForUserAsync(notificationId, userId);
+
+            return notification == null
+                ? null
+                : MapToDto(notification);
+        }
+
+        public async Task<int> GetUnreadCountAsync(int userId)
+        {
+            ValidateUserId(userId);
+
+            return await _notificationRepository.GetUnreadCountAsync(userId);
+        }
+
+        public async Task<NotificationDto> CreateAsync(NotificationCreateDto dto)
+        {
+            if (dto == null)
+            {
+                throw new ArgumentNullException(nameof(dto));
+            }
+
+            ValidateUserId(dto.UserId);
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+            {
+                throw new ArgumentException("Notification title is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Message))
+            {
+                throw new ArgumentException("Notification message is required.");
+            }
+
+            var notification = new Notification
+            {
+                UserId = dto.UserId,
+                Title = dto.Title.Trim(),
+                Message = dto.Message.Trim(),
+                IsRead = false,
+                ReferenceType = string.IsNullOrWhiteSpace(dto.ReferenceType)
+                    ? "General"
+                    : dto.ReferenceType.Trim(),
+                ReferenceId = dto.ReferenceId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var created = await _notificationRepository.CreateAsync(notification);
+
+            return MapToDto(created);
+        }
+
+        public async Task<bool> MarkAsReadAsync(
+            int notificationId,
+            int userId)
+        {
+            ValidateUserId(userId);
+
+            if (notificationId <= 0)
+            {
+                return false;
+            }
+
+            return await _notificationRepository
+                .MarkAsReadAsync(notificationId, userId);
+        }
+
+        public async Task<int> MarkAllAsReadAsync(int userId)
+        {
+            ValidateUserId(userId);
+
+            return await _notificationRepository.MarkAllAsReadAsync(userId);
+        }
+
+        public async Task<bool> DeleteAsync(
+            int notificationId,
+            int userId)
+        {
+            ValidateUserId(userId);
+
+            if (notificationId <= 0)
+            {
+                return false;
+            }
+
+            return await _notificationRepository
+                .DeleteAsync(notificationId, userId);
+        }
+
+        private static NotificationDto MapToDto(Notification notification)
+        {
             return new NotificationDto
             {
                 NotificationId = notification.NotificationId,
@@ -55,46 +141,12 @@ namespace CampusServicePortal.Modules.Notifications.Services
             };
         }
 
-        public async Task<NotificationDto> CreateAsync(
-            NotificationCreateDto dto)
+        private static void ValidateUserId(int userId)
         {
-            var notification = new Notification
+            if (userId <= 0)
             {
-                UserId = dto.UserId,
-                Title = dto.Title,
-                Message = dto.Message,
-                IsRead = false,
-                ReferenceType = dto.ReferenceType,
-                ReferenceId = dto.ReferenceId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdNotification =
-                await _notificationRepository.CreateAsync(notification);
-
-            return new NotificationDto
-            {
-                NotificationId = createdNotification.NotificationId,
-                UserId = createdNotification.UserId,
-                Title = createdNotification.Title,
-                Message = createdNotification.Message,
-                IsRead = createdNotification.IsRead,
-                ReferenceType = createdNotification.ReferenceType,
-                ReferenceId = createdNotification.ReferenceId,
-                CreatedAt = createdNotification.CreatedAt
-            };
-        }
-
-        public async Task<bool> MarkAsReadAsync(int notificationId)
-        {
-            return await _notificationRepository
-                .MarkAsReadAsync(notificationId);
-        }
-
-        public async Task<bool> DeleteAsync(int notificationId)
-        {
-            return await _notificationRepository
-                .DeleteAsync(notificationId);
+                throw new ArgumentException("A valid user id is required.");
+            }
         }
     }
 }
