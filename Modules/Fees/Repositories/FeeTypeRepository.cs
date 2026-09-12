@@ -27,6 +27,12 @@ public class FeeTypeRepository : IFeeTypeRepository
             .FirstOrDefaultAsync(x => x.FeeTypeId == feeTypeId);
     }
 
+    public async Task<FeeType?> GetByNameAsync(string name)
+    {
+        return await _context.Set<FeeType>()
+            .FirstOrDefaultAsync(x => x.Name == name);
+    }
+
     public async Task<FeeType> CreateAsync(FeeType feeType)
     {
         await _context.Set<FeeType>()

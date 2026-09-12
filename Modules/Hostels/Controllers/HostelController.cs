@@ -300,6 +300,42 @@ public class HostelController : ControllerBase
         return Ok(result);
     }
 
+    // =========================================================
+    // STUDENT: HOSTEL PAYMENT
+    // =========================================================
+
+    [HttpGet("allocations/{allocationId}/payment")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetAllocationPayment(
+        int allocationId)
+    {
+        var result = await _hostelService
+            .GetAllocationPaymentAsync(
+                GetCurrentUserId(),
+                allocationId);
+
+        return Ok(result);
+    }
+
+    [HttpPost("allocations/{allocationId}/pay")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> PayAllocation(
+        int allocationId,
+        [FromBody] PayHostelAllocationDto dto)
+    {
+        var result = await _hostelService
+            .PayAllocationAsync(
+                GetCurrentUserId(),
+                allocationId,
+                dto);
+
+        return Ok(result);
+    }
+
+    // =========================================================
+    // ADMIN: END ALLOCATION
+    // =========================================================
+
     [HttpPost("allocations/{allocationId}/end")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EndAllocation(int allocationId)

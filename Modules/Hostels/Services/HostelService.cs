@@ -1,29 +1,43 @@
-﻿using CampusServicePortal.Modules.Hostels.DTOs;
+﻿using CampusServicePortal.Modules.Fees.Entities;
+using CampusServicePortal.Modules.Fees.Interfaces.Repository;
+using CampusServicePortal.Modules.Hostels.DTOs;
 using CampusServicePortal.Modules.Hostels.Entities;
 using CampusServicePortal.Modules.Hostels.Repositories;
 using CampusServicePortal.Modules.Notifications.DTOs;
 using CampusServicePortal.Modules.Notifications.Interfaces.Service;
 using CampusServicePortal_TicUnicorns.Modules.Students.Entities;
 using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Modules.Fees.Enums;
 
 namespace CampusServicePortal.Modules.Hostels.Services;
 
 public class HostelService : IHostelService
 {
     private const int DefaultHoldMinutes = 15;
+    private const int HostelFeeDueDays = 7;
+    private const string HostelFeeTypeName = "Hostel Accommodation Fee";
 
     private readonly IHostelRepository _hostelRepository;
     private readonly IStudentRepository _studentRepository;
     private readonly INotificationService _notificationService;
+    private readonly IFeeTypeRepository _feeTypeRepository;
+    private readonly IStudentFeeRepository _studentFeeRepository;
+    private readonly IFeePaymentRepository _feePaymentRepository;
 
     public HostelService(
         IHostelRepository hostelRepository,
         IStudentRepository studentRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IFeeTypeRepository feeTypeRepository,
+        IStudentFeeRepository studentFeeRepository,
+        IFeePaymentRepository feePaymentRepository)
     {
         _hostelRepository = hostelRepository;
         _studentRepository = studentRepository;
         _notificationService = notificationService;
+        _feeTypeRepository = feeTypeRepository;
+        _studentFeeRepository = studentFeeRepository;
+        _feePaymentRepository = feePaymentRepository;
     }
 
     public async Task<List<HostelBlueprintDto>> GetHostelsAsync()
@@ -719,6 +733,10 @@ public class HostelService : IHostelService
             throw new KeyNotFoundException("Hostel application not found.");
         }
 
+        // Hostel payment uses the shared Fees tables.
+        // Validate the fee type before changing allocation state.
+        var hostelFeeType = await GetHostelFeeTypeAsync();
+
         var canApprove =
             application.Status.Equals(
                 "Pending",
@@ -809,10 +827,15 @@ public class HostelService : IHostelService
             await _hostelRepository.UpdateHoldAsync(applicationHold);
         }
 
+        var hostelFee = await EnsureHostelAllocationFeeAsync(
+            createdAllocation,
+            hostelFeeType);
+
         await CreateStudentNotificationAsync(
             application.StudentId,
             "Hostel Application Approved",
-            "Your hostel application has been approved and a bed has been allocated.",
+            $"Your hostel application has been approved and a bed has been allocated. " +
+            $"Hostel fee LKR {hostelFee.Amount:0.00} is now outstanding.",
             "HostelAllocation",
             createdAllocation.HostelAllocationId);
 
@@ -833,6 +856,122 @@ public class HostelService : IHostelService
     {
         var allocations = await _hostelRepository.GetAllocationsAsync();
         return allocations.Select(MapAllocation).ToList();
+    }
+
+    public async Task<HostelPaymentDto> GetAllocationPaymentAsync(
+        int userId,
+        int allocationId)
+    {
+        var student = await GetStudentByUserIdAsync(userId);
+        var allocation = await _hostelRepository
+            .GetAllocationByIdAsync(allocationId);
+
+        if (allocation is null)
+        {
+            throw new KeyNotFoundException("Hostel allocation not found.");
+        }
+
+        if (allocation.StudentId != student.StudentId)
+        {
+            throw new UnauthorizedAccessException(
+                "You cannot view another student's hostel payment.");
+        }
+
+        var feeType = await GetHostelFeeTypeAsync();
+        var studentFee = await EnsureHostelAllocationFeeAsync(
+            allocation,
+            feeType);
+
+        var payments = await _feePaymentRepository
+            .GetByStudentFeeIdAsync(studentFee.StudentFeeId);
+
+        var paidPayment = payments
+            .Where(x => x.PaymentStatus == PaymentStatus.Paid)
+            .OrderByDescending(x => x.PaidAt)
+            .FirstOrDefault();
+
+        return MapHostelPayment(
+            allocation.HostelAllocationId,
+            studentFee,
+            paidPayment);
+    }
+
+    public async Task<HostelPaymentDto> PayAllocationAsync(
+        int userId,
+        int allocationId,
+        PayHostelAllocationDto dto)
+    {
+        var student = await GetStudentByUserIdAsync(userId);
+        var allocation = await _hostelRepository
+            .GetAllocationByIdAsync(allocationId);
+
+        if (allocation is null)
+        {
+            throw new KeyNotFoundException("Hostel allocation not found.");
+        }
+
+        if (allocation.StudentId != student.StudentId)
+        {
+            throw new UnauthorizedAccessException(
+                "You cannot pay another student's hostel allocation.");
+        }
+
+        if (!allocation.Status.Equals(
+                "Active",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Only an active hostel allocation can be paid.");
+        }
+
+        var feeType = await GetHostelFeeTypeAsync();
+        var studentFee = await EnsureHostelAllocationFeeAsync(
+            allocation,
+            feeType);
+
+        var existingPayments = await _feePaymentRepository
+            .GetByStudentFeeIdAsync(studentFee.StudentFeeId);
+
+        if (studentFee.Status == StudentFeeStatus.Paid ||
+            existingPayments.Any(x => x.PaymentStatus == PaymentStatus.Paid))
+        {
+            throw new InvalidOperationException(
+                "Hostel accommodation fee has already been paid.");
+        }
+
+        var paymentReference = string.IsNullOrWhiteSpace(dto.PaymentReference)
+            ? $"HOSTEL-{allocationId}-{DateTime.UtcNow:yyyyMMddHHmmss}"
+            : dto.PaymentReference.Trim();
+
+        var payment = new FeePayment
+        {
+            StudentFeeId = studentFee.StudentFeeId,
+            Amount = studentFee.Amount,
+            PaymentStatus = PaymentStatus.Paid,
+            PaymentReference = paymentReference,
+            PaidAt = DateTime.UtcNow,
+            SourcePaymentId = null,
+            SourceFeeId = null,
+            TargetStudentFeeId = null
+        };
+
+        var createdPayment = await _feePaymentRepository
+            .CreateAsync(payment);
+
+        studentFee.Status = StudentFeeStatus.Paid;
+        await _studentFeeRepository.UpdateAsync(studentFee);
+
+        await CreateStudentNotificationAsync(
+            student.StudentId,
+            "Hostel Fee Paid",
+            $"Your hostel accommodation fee of LKR {studentFee.Amount:0.00} has been paid successfully.",
+            "FeePayment",
+            createdPayment.FeePaymentId);
+
+        return MapHostelPayment(
+            allocation.HostelAllocationId,
+            studentFee,
+            createdPayment);
     }
 
     public async Task<bool> EndAllocationAsync(int allocationId)
@@ -872,6 +1011,83 @@ public class HostelService : IHostelService
             allocation.HostelAllocationId);
 
         return true;
+    }
+
+    private async Task<FeeType> GetHostelFeeTypeAsync()
+    {
+        var feeType = await _feeTypeRepository
+            .GetByNameAsync(HostelFeeTypeName);
+
+        if (feeType is null || !feeType.IsActive)
+        {
+            throw new InvalidOperationException(
+                $"Active fee type '{HostelFeeTypeName}' is not configured.");
+        }
+
+        if (feeType.Amount <= 0)
+        {
+            throw new InvalidOperationException(
+                "Hostel accommodation fee amount must be greater than zero.");
+        }
+
+        return feeType;
+    }
+
+    private async Task<StudentFee> EnsureHostelAllocationFeeAsync(
+        HostelAllocation allocation,
+        FeeType feeType)
+    {
+        var reference = BuildHostelFeeReference(
+            allocation.HostelAllocationId);
+
+        var existingFee = await _studentFeeRepository
+            .GetByReferenceAsync(
+                allocation.StudentId,
+                reference);
+
+        if (existingFee is not null)
+        {
+            return existingFee;
+        }
+
+        var studentFee = new StudentFee
+        {
+            StudentId = allocation.StudentId,
+            FeeTypeId = feeType.FeeTypeId,
+            Amount = feeType.Amount,
+            DueDate = allocation.AllocatedAt
+                .AddDays(HostelFeeDueDays),
+            Status = StudentFeeStatus.Outstanding,
+            ExamReference = reference,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        return await _studentFeeRepository
+            .CreateAsync(studentFee);
+    }
+
+    private static string BuildHostelFeeReference(int allocationId)
+    {
+        return $"HOSTEL-ALLOCATION-{allocationId}";
+    }
+
+    private static HostelPaymentDto MapHostelPayment(
+        int allocationId,
+        StudentFee studentFee,
+        FeePayment? payment)
+    {
+        return new HostelPaymentDto
+        {
+            HostelAllocationId = allocationId,
+            StudentFeeId = studentFee.StudentFeeId,
+            FeePaymentId = payment?.FeePaymentId,
+            Amount = studentFee.Amount,
+            FeeStatus = studentFee.Status.ToString(),
+            PaymentStatus = payment?.PaymentStatus.ToString() ?? "Pending",
+            PaymentReference = payment?.PaymentReference,
+            DueDate = studentFee.DueDate,
+            PaidAt = payment?.PaidAt
+        };
     }
 
     private async Task<Student> GetStudentByUserIdAsync(int userId)

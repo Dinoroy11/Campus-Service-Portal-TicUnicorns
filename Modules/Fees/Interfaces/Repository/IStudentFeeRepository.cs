@@ -10,6 +10,10 @@ public interface IStudentFeeRepository
 
     Task<List<StudentFee>> GetByStudentIdAsync(int studentId);
 
+    Task<StudentFee?> GetByReferenceAsync(
+        int studentId,
+        string reference);
+
     Task<StudentFee> CreateAsync(StudentFee studentFee);
 
     Task UpdateAsync(StudentFee studentFee);

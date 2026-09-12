@@ -8,6 +8,8 @@ public class MealSubscriptionConfiguration : IEntityTypeConfiguration<MealSubscr
 {
     public void Configure(EntityTypeBuilder<MealSubscription> builder)
     {
+        builder.ToTable("MealSubscriptions");
+
         builder.HasKey(x => x.MealSubscriptionId);
 
         builder.Property(x => x.StudentId)
@@ -35,6 +37,17 @@ public class MealSubscriptionConfiguration : IEntityTypeConfiguration<MealSubscr
             .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
+
+        builder.Property(x => x.PaymentStatus)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(x => x.PaymentReference)
+            .HasMaxLength(100)
+            .IsRequired(false);
+
+        builder.Property(x => x.PaidAt)
+            .IsRequired(false);
 
         builder.Property(x => x.CreatedAt)
             .IsRequired();

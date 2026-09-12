@@ -1,13 +1,15 @@
-﻿
+﻿using System.Security.Claims;
 using CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
 using CampusServicePortal_TicUnicorns.Modules.Canteen.Enums;
 using CampusServicePortal_TicUnicorns.Modules.Canteen.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Canteen.Controllers;
 
 [ApiController]
 [Route("api/canteen")]
+[Authorize]
 public class CanteenController : ControllerBase
 {
     private readonly ICanteenService _canteenService;
@@ -17,60 +19,137 @@ public class CanteenController : ControllerBase
         _canteenService = canteenService;
     }
 
-
     // =========================================================
-    // MEAL PACKAGES
+    // CANTEENS
     // =========================================================
 
-    // GET: api/canteen/packages
-    [HttpGet("packages")]
-    public async Task<IActionResult> GetPackages()
+    [HttpGet("canteens")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetCanteens()
     {
-        var packages =
-            await _canteenService.GetActivePackagesAsync();
-
-        return Ok(packages);
+        return Ok(await _canteenService.GetCanteensAsync());
     }
 
+    [HttpGet("my/canteens")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyCanteens()
+    {
+        try
+        {
+            return Ok(await _canteenService.GetMyCanteensAsync(GetCurrentUserId()));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
 
-    // POST: api/canteen/packages
+    [HttpPost("canteens")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateCanteen([FromBody] CreateCanteenDto dto)
+    {
+        try
+        {
+            var result = await _canteenService.CreateCanteenAsync(dto);
+            return Created($"api/canteen/canteens/{result.CanteenId}", result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    // =========================================================
+    // MENU
+    // =========================================================
+
+    [HttpGet("canteens/{canteenId:int}/menu")]
+    [Authorize(Roles = "Admin,Student")]
+    public async Task<IActionResult> GetMenu(int canteenId)
+    {
+        try
+        {
+            return Ok(await _canteenService.GetMenuAsync(canteenId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("menu")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateMenuItem(
+        [FromBody] CreateCanteenMenuItemDto dto)
+    {
+        try
+        {
+            var result = await _canteenService.CreateMenuItemAsync(dto);
+            return Created($"api/canteen/menu/{result.MenuItemId}", result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    // =========================================================
+    // MEAL PLANS
+    // =========================================================
+
+    [HttpGet("packages")]
+    [Authorize(Roles = "Admin,Student")]
+    public async Task<IActionResult> GetPackages([FromQuery] int? canteenId)
+    {
+        return Ok(await _canteenService.GetActivePackagesAsync(canteenId));
+    }
+
     [HttpPost("packages")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreatePackage(
         [FromBody] CreateMealPackageDto dto)
     {
         try
         {
-            var result =
-                await _canteenService.CreatePackageAsync(dto);
-
-            return Created(
-                $"api/canteen/packages/{result.MealPackageId}",
-                result);
+            var result = await _canteenService.CreatePackageAsync(dto);
+            return Created($"api/canteen/packages/{result.MealPackageId}", result);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 
-
     // =========================================================
-    // SUBSCRIPTIONS
+    // STUDENT SUBSCRIPTIONS
     // =========================================================
 
-    // POST: api/canteen/subscriptions
     [HttpPost("subscriptions")]
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> CreateSubscription(
         [FromBody] CreateMealSubscriptionDto dto)
     {
         try
         {
-            var result =
-                await _canteenService
-                    .CreateSubscriptionAsync(dto);
+            var result = await _canteenService.CreateSubscriptionAsync(
+                GetCurrentUserId(),
+                dto);
 
             return Created(
                 $"api/canteen/subscriptions/{result.MealSubscriptionId}",
@@ -78,143 +157,137 @@ public class CanteenController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
     }
 
-
-    // GET: api/canteen/students/10/subscription
-    [HttpGet("students/{studentId:int}/subscription")]
-    public async Task<IActionResult> GetActiveSubscription(
-        int studentId)
+    [HttpPost("subscriptions/{mealSubscriptionId:int}/pay")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> PaySubscription(
+        int mealSubscriptionId,
+        [FromBody] SimulateMealSubscriptionPaymentDto dto)
     {
-        var result =
-            await _canteenService
-                .GetActiveSubscriptionAsync(studentId);
+        try
+        {
+            return Ok(await _canteenService.PaySubscriptionAsync(
+                GetCurrentUserId(),
+                mealSubscriptionId,
+                dto));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/subscription")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyActiveSubscription()
+    {
+        var result = await _canteenService
+            .GetMyActiveSubscriptionAsync(GetCurrentUserId());
 
         if (result == null)
         {
-            return NotFound(new
-            {
-                message =
-                    "No active meal subscription found for this student."
-            });
+            return NotFound(new { message = "No active meal subscription found." });
         }
 
         return Ok(result);
     }
 
-
-    // GET: api/canteen/students/10/subscriptions
-    [HttpGet("students/{studentId:int}/subscriptions")]
-    public async Task<IActionResult> GetStudentSubscriptions(
-        int studentId)
+    [HttpGet("my/subscriptions")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMySubscriptions()
     {
-        var result =
-            await _canteenService
-                .GetStudentSubscriptionsAsync(studentId);
-
-        return Ok(result);
+        return Ok(await _canteenService
+            .GetMySubscriptionsAsync(GetCurrentUserId()));
     }
 
+    [HttpGet("students/{studentId:int}/subscriptions")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetStudentSubscriptions(int studentId)
+    {
+        return Ok(await _canteenService.GetStudentSubscriptionsAsync(studentId));
+    }
 
     // =========================================================
     // ABSENCE
     // =========================================================
 
-    // POST: api/canteen/absences
     [HttpPost("absences")]
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> ReportAbsence(
         [FromBody] ReportMealAbsenceDto dto)
     {
         try
         {
-            await _canteenService.ReportAbsenceAsync(dto);
-
-            return Ok(new
-            {
-                message =
-                    "Meal absence reported successfully."
-            });
+            await _canteenService.ReportAbsenceAsync(GetCurrentUserId(), dto);
+            return Ok(new { message = "Meal absence reported successfully." });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
     }
 
-
-    // GET: api/canteen/subscriptions/5/absences
     [HttpGet("subscriptions/{mealSubscriptionId:int}/absences")]
-    public async Task<IActionResult> GetAbsences(
-        int mealSubscriptionId)
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetAbsences(int mealSubscriptionId)
     {
-        var result =
-            await _canteenService
-                .GetAbsencesAsync(mealSubscriptionId);
-
-        return Ok(result);
+        try
+        {
+            return Ok(await _canteenService.GetAbsencesAsync(
+                GetCurrentUserId(),
+                mealSubscriptionId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
-
 
     // =========================================================
     // MEAL USAGE
     // =========================================================
 
-    // GET: api/canteen/students/10/usage
-    [HttpGet("students/{studentId:int}/usage")]
-    public async Task<IActionResult> GetStudentMealUsage(
-        int studentId,
+    [HttpGet("my/usage")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyMealUsage(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate)
     {
-        var result =
-            await _canteenService
-                .GetStudentMealUsageAsync(
-                    studentId,
-                    fromDate,
-                    toDate);
-
-        return Ok(result);
+        return Ok(await _canteenService.GetMyMealUsageAsync(
+            GetCurrentUserId(),
+            fromDate,
+            toDate));
     }
 
-
-    // PUT: api/canteen/usage/collect
     [HttpPut("usage/collect")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CollectMeal(
         [FromQuery] int mealSubscriptionId,
         [FromQuery] DateTime mealDate,
@@ -222,34 +295,33 @@ public class CanteenController : ControllerBase
     {
         try
         {
-            var result =
-                await _canteenService.CollectMealAsync(
-                    mealSubscriptionId,
-                    mealDate,
-                    mealType);
-
-            return Ok(result);
+            return Ok(await _canteenService.CollectMealAsync(
+                mealSubscriptionId,
+                mealDate,
+                mealType));
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(value, out var userId))
+        {
+            throw new UnauthorizedAccessException("Invalid user identity.");
+        }
+
+        return userId;
     }
 }

@@ -39,4 +39,13 @@ public interface IHostelService
     Task<List<HostelAllocationDto>> GetMyAllocationsAsync(int userId);
     Task<List<HostelAllocationDto>> GetAllocationsAsync();
     Task<bool> EndAllocationAsync(int allocationId);
+
+    Task<HostelPaymentDto> GetAllocationPaymentAsync(
+        int userId,
+        int allocationId);
+
+    Task<HostelPaymentDto> PayAllocationAsync(
+        int userId,
+        int allocationId,
+        PayHostelAllocationDto dto);
 }

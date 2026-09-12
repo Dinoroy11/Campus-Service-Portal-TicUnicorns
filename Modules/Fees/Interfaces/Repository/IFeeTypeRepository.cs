@@ -8,6 +8,8 @@ public interface IFeeTypeRepository
 
     Task<FeeType?> GetByIdAsync(int feeTypeId);
 
+    Task<FeeType?> GetByNameAsync(string name);
+
     Task<FeeType> CreateAsync(FeeType feeType);
 
     Task UpdateAsync(FeeType feeType);

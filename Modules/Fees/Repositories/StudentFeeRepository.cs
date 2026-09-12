@@ -35,6 +35,16 @@ public class StudentFeeRepository : IStudentFeeRepository
             .ToListAsync();
     }
 
+    public async Task<StudentFee?> GetByReferenceAsync(
+        int studentId,
+        string reference)
+    {
+        return await _context.Set<StudentFee>()
+            .FirstOrDefaultAsync(x =>
+                x.StudentId == studentId &&
+                x.ExamReference == reference);
+    }
+
     public async Task<StudentFee> CreateAsync(StudentFee studentFee)
     {
         await _context.Set<StudentFee>()

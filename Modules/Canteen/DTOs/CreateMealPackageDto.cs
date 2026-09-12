@@ -1,25 +1,22 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CampusServicePortal_TicUnicorns.Modules.Canteen.DTOs;
 
 public class CreateMealPackageDto
 {
     [Required]
-    [MaxLength(20)]
-    public string PackageCode { get; set; } = string.Empty;
+    public int CanteenId { get; set; }
 
+    // BB / HB / FB
     [Required]
-    [MaxLength(100)]
-    public string PackageName { get; set; } = string.Empty;
+    [MaxLength(10)]
+    public string PlanType { get; set; } = string.Empty;
 
-    public bool BreakfastIncluded { get; set; }
+    // Weekly / Monthly
+    [Required]
+    [MaxLength(20)]
+    public string BillingPeriod { get; set; } = string.Empty;
 
-    public bool LunchIncluded { get; set; }
-
-    public bool DinnerIncluded { get; set; }
-
-    [Range(0, double.MaxValue)]
-    public decimal MonthlyPrice { get; set; }
+    [Range(0.01, double.MaxValue)]
+    public decimal Price { get; set; }
 }
-
