@@ -8,6 +8,8 @@ public interface IStudentService
 
     Task<StudentDto?> GetByIdAsync(int studentId);
 
+    Task<StudentDto?> GetByUserIdAsync(int userId);
+
     Task<StudentDto> CreateAsync(CreateStudentDto dto);
 
     Task<StudentDto?> UpdateAsync(

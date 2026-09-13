@@ -51,6 +51,31 @@ public class CanteenService : ICanteenService
         return canteens.Select(MapCanteen).ToList();
     }
 
+    public async Task<CanteenEligibilityDto> GetMyEligibilityAsync(int userId)
+    {
+        var student = await GetStudentByUserIdAsync(userId);
+        var hostelId = await _repository
+            .GetActiveHostelIdByStudentIdAsync(student.StudentId);
+
+        if (!hostelId.HasValue)
+        {
+            return new CanteenEligibilityDto
+            {
+                IsEligible = false,
+                HostelId = null,
+                Message =
+                    "Canteen meal plans become available after an active hostel allocation is assigned."
+            };
+        }
+
+        return new CanteenEligibilityDto
+        {
+            IsEligible = true,
+            HostelId = hostelId.Value,
+            Message = "You are eligible to use hostel canteen meal plans."
+        };
+    }
+
     public async Task<CanteenDto> CreateCanteenAsync(CreateCanteenDto dto)
     {
         if (dto.HostelId <= 0)
@@ -368,6 +393,16 @@ public class CanteenService : ICanteenService
     // =========================================================
     // ABSENCE
     // =========================================================
+
+    public async Task<List<MealSubscriptionResponseDto>> GetAllSubscriptionsAsync()
+    {
+        var subscriptions = await _repository.GetAllSubscriptionsAsync();
+
+        return subscriptions
+            .Where(x => x.MealPackage != null)
+            .Select(x => MapSubscription(x, x.MealPackage!))
+            .ToList();
+    }
 
     public async Task ReportAbsenceAsync(
         int userId,

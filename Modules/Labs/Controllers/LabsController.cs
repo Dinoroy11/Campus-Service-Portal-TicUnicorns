@@ -1,5 +1,7 @@
-﻿using CampusServicePortal.Modules.Labs.DTOs;
+﻿using System.Security.Claims;
+using CampusServicePortal.Modules.Labs.DTOs;
 using CampusServicePortal.Modules.Labs.Interfaces.Service;
+using CampusServicePortal_TicUnicorns.Modules.Students.Interfaces.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,399 +9,339 @@ namespace CampusServicePortal.Modules.Labs.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LabsController : ControllerBase
 {
     private readonly ILabService _labService;
+    private readonly IStudentRepository _studentRepository;
 
-    public LabsController(ILabService labService)
+    public LabsController(
+        ILabService labService,
+        IStudentRepository studentRepository)
     {
         _labService = labService;
+        _studentRepository = studentRepository;
     }
 
-    // GET: api/Labs
     [HttpGet]
+    [Authorize(Roles = "Student,Admin")]
     public async Task<ActionResult<List<LabDto>>> GetAllLabs()
     {
-        var labs = await _labService.GetAllLabsAsync();
-
-        return Ok(labs);
+        return Ok(await _labService.GetAllLabsAsync());
     }
 
-    // GET: api/Labs/1
     [HttpGet("{labId:int}")]
-    public async Task<ActionResult<LabDto>> GetLab(
-        int labId)
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<ActionResult<LabDto>> GetLab(int labId)
     {
         var lab = await _labService.GetLabByIdAsync(labId);
 
-        if (lab == null)
-            return NotFound(new
-            {
-                message = "Lab not found."
-            });
-
-        return Ok(lab);
+        return lab == null
+            ? NotFound(new { message = "Lab not found." })
+            : Ok(lab);
     }
 
-    // POST: api/Labs
     [HttpPost]
-    public async Task<ActionResult<LabDto>> CreateLab(
-        [FromBody] CreateLabDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<LabDto>> CreateLab([FromBody] CreateLabDto dto)
     {
         try
         {
             var lab = await _labService.CreateLabAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetLab),
-                new { labId = lab.LabId },
-                lab);
+            return CreatedAtAction(nameof(GetLab), new { labId = lab.LabId }, lab);
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // PUT: api/Labs/1
     [HttpPut("{labId:int}")]
-    public async Task<IActionResult> UpdateLab(
-        int labId,
-        [FromBody] UpdateLabDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateLab(int labId, [FromBody] UpdateLabDto dto)
     {
         try
         {
-            await _labService.UpdateLabAsync(
-                labId,
-                dto);
-
+            await _labService.UpdateLabAsync(labId, dto);
             return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // GET: api/Labs/1/seats
     [HttpGet("{labId:int}/seats")]
-    public async Task<ActionResult<List<LabSeatDto>>>
-        GetSeats(int labId)
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<ActionResult<List<LabSeatDto>>> GetSeats(int labId)
     {
         try
         {
-            var seats =
-                await _labService.GetSeatsByLabIdAsync(
-                    labId);
-
-            return Ok(seats);
+            return Ok(await _labService.GetSeatsByLabIdAsync(labId));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // POST: api/Labs/seats
     [HttpPost("seats")]
-    public async Task<ActionResult<LabSeatDto>>
-        CreateSeat(
-            [FromBody] CreateLabSeatDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<LabSeatDto>> CreateSeat([FromBody] CreateLabSeatDto dto)
     {
         try
         {
-            var seat =
-                await _labService.CreateSeatAsync(dto);
-
-            return Ok(seat);
+            return Ok(await _labService.CreateSeatAsync(dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // PATCH: api/Labs/seats/10/status
-    // Admin can mark a PC as Available, Maintenance or Inactive.
-    // If the PC has upcoming bookings, the service tries to move each
-    // booking to another free PC for the same date/time. If no same-time
-    // replacement exists, that booking is cancelled and the student is notified.
     [HttpPatch("seats/{labSeatId:int}/status")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<LabSeatStatusUpdateResultDto>>
-        UpdateSeatStatus(
-            int labSeatId,
-            [FromBody] UpdateLabSeatStatusDto dto)
+    public async Task<ActionResult<LabSeatStatusUpdateResultDto>> UpdateSeatStatus(
+        int labSeatId,
+        [FromBody] UpdateLabSeatStatusDto dto)
     {
         try
         {
-            var result =
-                await _labService.UpdateSeatStatusAsync(
-                    labSeatId,
-                    dto);
-
-            return Ok(result);
+            return Ok(await _labService.UpdateSeatStatusAsync(labSeatId, dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // GET: api/Labs/1/timeslots
     [HttpGet("{labId:int}/timeslots")]
-    public async Task<ActionResult<List<LabTimeSlotDto>>>
-        GetTimeSlots(int labId)
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<ActionResult<List<LabTimeSlotDto>>> GetTimeSlots(int labId)
     {
         try
         {
-            var slots =
-                await _labService
-                    .GetTimeSlotsByLabIdAsync(labId);
-
-            return Ok(slots);
+            return Ok(await _labService.GetTimeSlotsByLabIdAsync(labId));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
     }
 
-    // POST: api/Labs/timeslots
     [HttpPost("timeslots")]
-    public async Task<ActionResult<LabTimeSlotDto>>
-        CreateTimeSlot(
-            [FromBody] CreateLabTimeSlotDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<LabTimeSlotDto>> CreateTimeSlot(
+        [FromBody] CreateLabTimeSlotDto dto)
     {
         try
         {
-            var slot =
-                await _labService
-                    .CreateTimeSlotAsync(dto);
-
-            return Ok(slot);
+            return Ok(await _labService.CreateTimeSlotAsync(dto));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // SCIENCE LAB example:
-    // GET /api/Labs/1/availability?timeSlotId=1&bookingDate=2026-09-13
-    //
-    // COMPUTER LAB example:
-    // GET /api/Labs/2/availability?timeSlotId=2&bookingDate=2026-09-13&requestedStartTime=09:00:00&requestedHours=4
     [HttpGet("{labId:int}/availability")]
-    public async Task<ActionResult<LabAvailabilityDto>>
-        GetAvailability(
-            int labId,
-            [FromQuery] int timeSlotId,
-            [FromQuery] DateTime bookingDate,
-            [FromQuery] TimeSpan? requestedStartTime = null,
-            [FromQuery] double? requestedHours = null)
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<ActionResult<LabAvailabilityDto>> GetAvailability(
+        int labId,
+        [FromQuery] int timeSlotId,
+        [FromQuery] DateTime bookingDate,
+        [FromQuery] TimeSpan? requestedStartTime = null,
+        [FromQuery] double? requestedHours = null)
     {
         try
         {
-            var availability =
-                await _labService.GetAvailabilityAsync(
-                    labId,
-                    timeSlotId,
-                    bookingDate,
-                    requestedStartTime,
-                    requestedHours);
-
-            return Ok(availability);
+            return Ok(await _labService.GetAvailabilityAsync(
+                labId,
+                timeSlotId,
+                bookingDate,
+                requestedStartTime,
+                requestedHours));
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // POST: api/Labs/bookings
-    //
-    // Science: LabSeatId / RequestedStartTime / RequestedHours are not required.
-    // Computer: all three are required, duration <= 4 hours.
     [HttpPost("bookings")]
-    public async Task<ActionResult<LabBookingDto>>
-        CreateBooking(
-            [FromBody] CreateLabBookingDto dto)
+    [Authorize(Roles = "Student")]
+    public async Task<ActionResult<LabBookingDto>> CreateBooking(
+        [FromBody] CreateLabBookingDto dto)
     {
         try
         {
-            var booking =
-                await _labService.CreateBookingAsync(dto);
+            var student = await GetCurrentStudentAsync();
+            dto.StudentId = student.StudentId;
 
-            return Ok(booking);
+            return Ok(await _labService.CreateBookingAsync(dto));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new
-            {
-                message = ex.Message
-            });
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
     }
 
-    // GET: api/Labs/bookings/1
-    [HttpGet("bookings/{labBookingId:int}")]
-    public async Task<ActionResult<LabBookingDto>>
-        GetBooking(int labBookingId)
+    [HttpGet("bookings/my")]
+    [Authorize(Roles = "Student")]
+    public async Task<ActionResult<List<LabBookingDto>>> GetMyBookings()
     {
-        var booking =
-            await _labService.GetBookingByIdAsync(
-                labBookingId);
+        try
+        {
+            var student = await GetCurrentStudentAsync();
+            return Ok(await _labService.GetBookingsByStudentIdAsync(student.StudentId));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("bookings")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<LabBookingDto>>> GetAllBookings()
+    {
+        return Ok(await _labService.GetAllBookingsAsync());
+    }
+
+    [HttpGet("bookings/{labBookingId:int}")]
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<ActionResult<LabBookingDto>> GetBooking(int labBookingId)
+    {
+        var booking = await _labService.GetBookingByIdAsync(labBookingId);
 
         if (booking == null)
-            return NotFound(new
+        {
+            return NotFound(new { message = "Booking not found." });
+        }
+
+        if (User.IsInRole("Student"))
+        {
+            var student = await GetCurrentStudentAsync();
+            if (booking.StudentId != student.StudentId)
             {
-                message = "Booking not found."
-            });
+                return Forbid();
+            }
+        }
 
         return Ok(booking);
     }
 
-    // PATCH: api/Labs/bookings/1/cancel
     [HttpPatch("bookings/{labBookingId:int}/cancel")]
-    public async Task<IActionResult> CancelBooking(
-        int labBookingId)
+    [Authorize(Roles = "Student,Admin")]
+    public async Task<IActionResult> CancelBooking(int labBookingId)
     {
         try
         {
-            await _labService.CancelBookingAsync(
-                labBookingId);
+            var booking = await _labService.GetBookingByIdAsync(labBookingId);
 
+            if (booking == null)
+            {
+                return NotFound(new { message = "Booking not found." });
+            }
+
+            if (User.IsInRole("Student"))
+            {
+                var student = await GetCurrentStudentAsync();
+                if (booking.StudentId != student.StudentId)
+                {
+                    return Forbid();
+                }
+            }
+
+            await _labService.CancelBookingAsync(labBookingId);
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
-            return NotFound(new
-            {
-                message = ex.Message
-            });
+            return NotFound(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
-            return Conflict(new
-            {
-                message = ex.Message
-            });
+            return Conflict(new { message = ex.Message });
         }
+    }
+
+    private async Task<CampusServicePortal_TicUnicorns.Modules.Students.Entities.Student>
+        GetCurrentStudentAsync()
+    {
+        var userIdText = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdText, out var userId))
+        {
+            throw new UnauthorizedAccessException("Invalid user identity.");
+        }
+
+        return await _studentRepository.GetByUserIdAsync(userId)
+            ?? throw new UnauthorizedAccessException(
+                "Student profile was not found for the logged-in user.");
     }
 }

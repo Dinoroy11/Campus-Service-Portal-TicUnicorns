@@ -15,6 +15,15 @@ public class LabBookingRepository : ILabBookingRepository
         _context = context;
     }
 
+    public async Task<List<LabBooking>> GetAllAsync()
+    {
+        return await _context.Set<LabBooking>()
+            .AsNoTracking()
+            .OrderByDescending(x => x.BookingDate)
+            .ThenByDescending(x => x.StartTime)
+            .ToListAsync();
+    }
+
     public async Task<List<LabBooking>> GetByLabAndDateAsync(
         int labId,
         DateTime bookingDate)
@@ -55,6 +64,17 @@ public class LabBookingRepository : ILabBookingRepository
                 x.Status == LabBookingStatus.Booked &&
                 x.StartTime < endTime &&
                 x.EndTime > startTime)
+            .ToListAsync();
+    }
+
+    public async Task<List<LabBooking>> GetByStudentIdAsync(
+        int studentId)
+    {
+        return await _context.Set<LabBooking>()
+            .AsNoTracking()
+            .Where(x => x.StudentId == studentId)
+            .OrderByDescending(x => x.BookingDate)
+            .ThenByDescending(x => x.StartTime)
             .ToListAsync();
     }
 

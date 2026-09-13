@@ -39,6 +39,7 @@ public interface ICanteenRepository
         DateTime startDate,
         DateTime endDate);
     Task<List<MealSubscription>> GetStudentSubscriptionsAsync(int studentId);
+    Task<List<MealSubscription>> GetAllSubscriptionsAsync();
     Task<MealSubscription> AddSubscriptionAsync(MealSubscription subscription);
     Task UpdateSubscriptionAsync(MealSubscription subscription);
 

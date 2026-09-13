@@ -453,6 +453,27 @@ public class LabService : ILabService
             dto);
     }
 
+    public async Task<List<LabBookingDto>> GetBookingsByStudentIdAsync(
+        int studentId)
+    {
+        var bookings =
+            await _bookingRepository.GetByStudentIdAsync(
+                studentId);
+
+        return bookings
+            .Select(MapToBookingDto)
+            .ToList();
+    }
+
+    public async Task<List<LabBookingDto>> GetAllBookingsAsync()
+    {
+        var bookings = await _bookingRepository.GetAllAsync();
+
+        return bookings
+            .Select(MapToBookingDto)
+            .ToList();
+    }
+
     public async Task<LabBookingDto?> GetBookingByIdAsync(
         int labBookingId)
     {
@@ -483,6 +504,24 @@ public class LabService : ILabService
         booking.Status = LabBookingStatus.Cancelled;
 
         await _bookingRepository.UpdateAsync(booking);
+
+        var student = await _studentRepository.GetByIdAsync(booking.StudentId);
+
+        if (student?.UserId != null)
+        {
+            await _notificationService.CreateAsync(
+                new NotificationCreateDto
+                {
+                    UserId = student.UserId.Value,
+                    Title = "Lab Booking Cancelled",
+                    Message =
+                        $"Your lab booking on {booking.BookingDate:yyyy-MM-dd} " +
+                        $"from {booking.StartTime:hh\\:mm} to {booking.EndTime:hh\\:mm} " +
+                        "has been cancelled.",
+                    ReferenceType = "LabBooking",
+                    ReferenceId = booking.LabBookingId
+                });
+        }
     }
 
     // =========================================================

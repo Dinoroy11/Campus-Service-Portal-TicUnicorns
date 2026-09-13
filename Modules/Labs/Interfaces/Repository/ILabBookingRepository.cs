@@ -4,6 +4,8 @@ namespace CampusServicePortal.Modules.Labs.Interfaces.Repository;
 
 public interface ILabBookingRepository
 {
+    Task<List<LabBooking>> GetAllAsync();
+
     Task<List<LabBooking>> GetByLabAndDateAsync(
         int labId,
         DateTime bookingDate);
@@ -18,6 +20,9 @@ public interface ILabBookingRepository
         DateTime bookingDate,
         TimeSpan startTime,
         TimeSpan endTime);
+
+    Task<List<LabBooking>> GetByStudentIdAsync(
+        int studentId);
 
     Task<LabBooking?> GetByIdAsync(int labBookingId);
 

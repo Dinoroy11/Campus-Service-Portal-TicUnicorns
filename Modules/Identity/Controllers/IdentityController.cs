@@ -8,6 +8,7 @@ namespace CampusServicePortal_TicUnicorns.Modules.Identity.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class IdentityController : ControllerBase
 {
     private readonly IIdentityService _identityService;

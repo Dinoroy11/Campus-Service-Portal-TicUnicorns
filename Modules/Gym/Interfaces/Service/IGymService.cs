@@ -18,6 +18,7 @@ public interface IGymService
         CreateGymBookingRequestDto dto);
 
     Task<IEnumerable<GymBookingDto>> GetMyBookingsAsync(int userId);
+    Task<IEnumerable<GymBookingDto>> GetAllBookingsAsync();
 
     Task<GymBookingDto> PayBookingAsync(
         int userId,

@@ -43,6 +43,22 @@ public class StudentService : IStudentService
             : MapToDto(student);
     }
 
+    public async Task<StudentDto?> GetByUserIdAsync(int userId)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException(
+                "User ID must be greater than zero.");
+        }
+
+        var student =
+            await _studentRepository.GetByUserIdAsync(userId);
+
+        return student is null
+            ? null
+            : MapToDto(student);
+    }
+
     public async Task<StudentDto> CreateAsync(
         CreateStudentDto dto)
     {

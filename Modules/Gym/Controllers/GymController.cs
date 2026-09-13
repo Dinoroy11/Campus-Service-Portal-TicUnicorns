@@ -84,6 +84,13 @@ public class GymController : ControllerBase
             dto));
     }
 
+    [HttpGet("bookings")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<GymBookingDto>>> GetAllBookings()
+    {
+        return Ok(await _gymService.GetAllBookingsAsync());
+    }
+
     [HttpGet("bookings/my")]
     [Authorize(Roles = "Student")]
     public async Task<ActionResult<IEnumerable<GymBookingDto>>> GetMyBookings()

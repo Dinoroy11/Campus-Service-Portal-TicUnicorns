@@ -223,6 +223,16 @@ public class CanteenRepository : ICanteenRepository
             .ToListAsync();
     }
 
+    public async Task<List<MealSubscription>> GetAllSubscriptionsAsync()
+    {
+        return await _context.MealSubscriptions
+            .Include(x => x.MealPackage)
+                .ThenInclude(x => x!.Canteen)
+            .OrderByDescending(x => x.StartDate)
+            .ThenByDescending(x => x.MealSubscriptionId)
+            .ToListAsync();
+    }
+
     public async Task<MealSubscription> AddSubscriptionAsync(
         MealSubscription subscription)
     {

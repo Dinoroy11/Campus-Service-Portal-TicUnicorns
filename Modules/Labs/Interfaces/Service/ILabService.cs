@@ -35,6 +35,11 @@ public interface ILabService
     Task<LabBookingDto> CreateBookingAsync(
         CreateLabBookingDto dto);
 
+    Task<List<LabBookingDto>> GetBookingsByStudentIdAsync(
+        int studentId);
+
+    Task<List<LabBookingDto>> GetAllBookingsAsync();
+
     Task<LabBookingDto?> GetBookingByIdAsync(
         int labBookingId);
 

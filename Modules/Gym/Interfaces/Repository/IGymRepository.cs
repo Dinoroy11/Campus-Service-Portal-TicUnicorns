@@ -19,6 +19,7 @@ public interface IGymRepository
     Task<GymSlot> CreateSlotAsync(GymSlot slot);
     Task<GymSlot?> UpdateSlotAsync(GymSlot slot);
 
+    Task<IEnumerable<GymBooking>> GetAllBookingsAsync();
     Task<IEnumerable<GymBooking>> GetBookingsBySlotIdAsync(int slotId);
     Task<IEnumerable<GymBooking>> GetBookingsByUserIdAsync(int userId);
     Task<GymBooking?> GetBookingByIdAsync(int bookingId);

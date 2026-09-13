@@ -283,6 +283,19 @@ public class GymService : IGymService
         return bookings.Select(MapBooking);
     }
 
+    public async Task<IEnumerable<GymBookingDto>> GetAllBookingsAsync()
+    {
+        var bookings = (await _gymRepository.GetAllBookingsAsync()).ToList();
+
+        foreach (var booking in bookings.Where(x => x.Status == "Held"))
+        {
+            await ExpireBookingIfNeededAsync(booking);
+        }
+
+        bookings = (await _gymRepository.GetAllBookingsAsync()).ToList();
+        return bookings.Select(MapBooking);
+    }
+
     public async Task<GymBookingDto> PayBookingAsync(
         int userId,
         int bookingId,

@@ -1,4 +1,6 @@
-﻿namespace CampusServicePortal.Modules.Labs.DTOs;
+﻿using System.Text.Json.Serialization;
+
+namespace CampusServicePortal.Modules.Labs.DTOs;
 
 public class CreateLabBookingDto
 {
@@ -10,6 +12,8 @@ public class CreateLabBookingDto
     // Science labs do not use a seat.
     public int? LabSeatId { get; set; }
 
+    // Set by the backend from the logged-in Student JWT.
+    [JsonIgnore]
     public int StudentId { get; set; }
 
     public DateTime BookingDate { get; set; }

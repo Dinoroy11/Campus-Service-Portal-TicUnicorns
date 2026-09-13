@@ -30,6 +30,14 @@ public class CanteenController : ControllerBase
         return Ok(await _canteenService.GetCanteensAsync());
     }
 
+    [HttpGet("my/eligibility")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyEligibility()
+    {
+        return Ok(await _canteenService
+            .GetMyEligibilityAsync(GetCurrentUserId()));
+    }
+
     [HttpGet("my/canteens")]
     [Authorize(Roles = "Student")]
     public async Task<IActionResult> GetMyCanteens()
@@ -217,6 +225,13 @@ public class CanteenController : ControllerBase
     {
         return Ok(await _canteenService
             .GetMySubscriptionsAsync(GetCurrentUserId()));
+    }
+
+    [HttpGet("subscriptions")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllSubscriptions()
+    {
+        return Ok(await _canteenService.GetAllSubscriptionsAsync());
     }
 
     [HttpGet("students/{studentId:int}/subscriptions")]

@@ -9,6 +9,7 @@ public interface ICanteenService
     // Canteens
     Task<List<CanteenDto>> GetCanteensAsync();
     Task<List<CanteenDto>> GetMyCanteensAsync(int userId);
+    Task<CanteenEligibilityDto> GetMyEligibilityAsync(int userId);
     Task<CanteenDto> CreateCanteenAsync(CreateCanteenDto dto);
 
     // Menu
@@ -30,6 +31,7 @@ public interface ICanteenService
     Task<MealSubscriptionResponseDto?> GetMyActiveSubscriptionAsync(int userId);
     Task<List<MealSubscriptionResponseDto>> GetMySubscriptionsAsync(int userId);
     Task<List<MealSubscriptionResponseDto>> GetStudentSubscriptionsAsync(int studentId);
+    Task<List<MealSubscriptionResponseDto>> GetAllSubscriptionsAsync();
 
     // Absence
     Task ReportAbsenceAsync(int userId, ReportMealAbsenceDto dto);

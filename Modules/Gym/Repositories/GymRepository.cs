@@ -127,6 +127,16 @@ public class GymRepository : IGymRepository
         return existing;
     }
 
+    public async Task<IEnumerable<GymBooking>> GetAllBookingsAsync()
+    {
+        return await _context.GymBookings
+            .Include(x => x.GymSlot)
+                .ThenInclude(x => x!.Gym)
+            .OrderByDescending(x => x.BookingDate)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<GymBooking>> GetBookingsBySlotIdAsync(int slotId)
     {
         return await _context.GymBookings
