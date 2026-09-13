@@ -1,3 +1,8 @@
+using CampusServicePortal_TicUnicorns.Modules.AcademicMasters.Interfaces.Repository;
+using CampusServicePortal_TicUnicorns.Modules.AcademicMasters.Interfaces.Service;
+using CampusServicePortal_TicUnicorns.Modules.AcademicMasters.Repositories;
+using CampusServicePortal_TicUnicorns.Modules.AcademicMasters.Services;
+
 // =========================================================
 // Complaints
 // =========================================================
@@ -346,7 +351,17 @@ builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 
+// =========================================================
+// Academic Master
+// =========================================================
 
+builder.Services.AddScoped<
+    IAcademicMasterRepository,
+    AcademicMasterRepository>();
+
+builder.Services.AddScoped<
+    IAcademicMasterService,
+    AcademicMasterService>();
 
 
 
