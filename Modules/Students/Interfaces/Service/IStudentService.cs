@@ -16,5 +16,9 @@ public interface IStudentService
         int studentId,
         UpdateStudentDto dto);
 
+    Task<StudentDto?> UpdateHostelEligibilityAsync(
+        int userId,
+        string gender);
+
     Task<int?> GetDepartmentIdAsync(int studentId);
 }
